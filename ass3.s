@@ -9,6 +9,8 @@
 section	.rodata			        ; we define (global) read-only variables in .rodata section
     droneSize: dd 20            ; Drone structure size
     taps: dd 11, 13, 14, 16     ; Unique taps for LFSR
+    format_int: db "%d", 10, 0
+    format_string: db "%s", 10, 0
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
@@ -39,22 +41,49 @@ section .text
 ; Global Functions
 ; -----------------------------------------------------
 global main
+extern printf
+
 ; -----------------------------------------------------
 ; Name: _start
 ; Purpose: Starting function of the program
 ; -----------------------------------------------------
-_start:
-    pop     dword ecx       ; ecx = argc    
-    mov     esi,esp         ; esi = argv 
-    mov     eax,ecx         ; put the num of argument to ecx
-    shl     eax,2           ; compute the size of argv in bytes
-    add     eax,esi         ; add the size to the address of argv 
-    add     eax,4           ; skip NULL at the end of argv
-    push    dword eax       ; char* envp[]
-    push    dword esi       ; char* argv[]
-    push    dword ecx       ; int argc
+main:
 
-    call    main            ; call main
+    mov ecx, [esp+4] ; argc
+    mov edx, [esp+8] ; argv
+    top:
+    push ecx ; save registers that printf wastes
+    push edx
+
+    push dword [edx] ; the argument string to display
+    push format_string ; the format string
+    call printf
+    add esp, 8 ; remove the two parameters
+
+    pop edx ; restore registers printf used
+    pop ecx
+
+    add edx, 4 ; point to next argument
+    dec ecx ; count down
+    jnz top ; if not done counting keep going
+
+    ; pop     dword ecx       ; ecx = argc    
+    ; mov     esi,esp         ; esi = argv 
+    ; mov     eax,ecx         ; put the num of argument to ecx
+    ; shl     eax,2           ; compute the size of argv in bytes
+    ; add     eax,esi         ; add the size to the address of argv 
+    ; add     eax,4           ; skip NULL at the end of argv
+    ; push    dword eax       ; char* envp[]
+    ; push    dword esi       ; char* argv[]
+    ; push    dword ecx       ; int argc
+
+
+    mov dword ecx, [numberOfDrones]
+    push ecx
+    push format_int
+    call printf
+    add esp, 8
+    call    main1            ; call main
 
     mov     ebx,eax
     mov    eax,1
@@ -67,7 +96,7 @@ _start:
 ; Init the program details using argv arguments and the other
 ; functions below.
 ; -----------------------------------------------------
-main:
+main1:
 ; -----------------------------------------------------
 ; Name: initBoard
 ; Purpose: Function that init the board size and array.

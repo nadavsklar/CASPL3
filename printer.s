@@ -7,6 +7,7 @@
 ; Global read only vars
 ; -----------------------------------------------------
 section	.rodata			; we define (global) read-only variables in .rodata section
+x: dd 5
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
