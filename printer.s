@@ -2,6 +2,8 @@
 ; Description: Printer main activity file.
 ; Date: 20.5.2019
 ; Change Log: 21.5.2019 - Adding some documentation.
+;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
+;                           Co routines stuff. 
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars

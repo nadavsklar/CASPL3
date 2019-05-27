@@ -2,102 +2,118 @@
 ; Description: Main file. Init the game.
 ; Date: 20.5.2019
 ; Change Log: 21.5.2019 - Adding some documentation
-;             26.5.2019 - Compiling and adding makefile
+;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
+;                           Co routines stuff. 
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
 ; -----------------------------------------------------
 section	.rodata			        ; we define (global) read-only variables in .rodata section
-    droneSize: dd 20            ; Drone structure size
+    global StackOffset
+    global FunctionOffset
+    global Const8
+    global format_int
+    global format_string
+    StackSizeDrone: dd 16384
     taps: dd 11, 13, 14, 16     ; Unique taps for LFSR
-    format_int: db "%d", 10, 0
-    format_string: db "%s", 10, 0
-; -----------------------------------------------------
-; Global initialized vars.
-; -----------------------------------------------------
-section .data                   ; we define (global) initialized variables in .data section
-    numberOfDrones: dd 0            ; number of drones on the board
-    numberOfNeededTargets: dd 0     ; number of targets to win the game
-    printSteps: dd 0                ; how many steps in order to print the game board
-    beta: dd 0                      ; field of wiew
-    maxDistance: dd 0               ; the maximum distance from the target in order to destroy it
-    seed: dd 0                      ; init for the LFSR
+    format_int: db "%d", 10, 0  ; format int printf
+    format_string: db "%s", 10, 0   ; format string printf
+    FunctionOffset equ 0                 ; offset of pointer to co-routine function in co-routine struct 
+    StackOffset equ 4                   ; offset of pointer to co-routine stack in co-routine struct
+    Const8: dd 8
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
 ; -----------------------------------------------------
 section .bss			        ; we define (global) uninitialized variables in .bss section
-    struc drone                 ; we define drone structure
-        x: resd 1               ; x coordinate
-        y: resd 1               ; y coordinate
-        alpha: resd 1           ; angle with x-axis
-        numOfTargets: resd 1    ; amount of targes destoryed by a drone
-        next: resd 1            ; next drone in the array
-    endstruc
-
+    global Curr
     LFSR: resw 1                ; register for randon numbers
-
+    StackSize equ 16*1024             ; 16 kb, for stack size
+    PrinterStack: resb StackSize          ; stack for each co-routine
+    TargetStack: resb StackSize
+    SchedulerStack: resb StackSize
+    DroneStack: resb StackSize
+    Curr: resd 1
+    TempSP: resd 1
+    MainSP: resd 1
+; -----------------------------------------------------
+; Global initialized vars.
+; -----------------------------------------------------
+section .data                   ; we define (global) initialized variables in .data section
+    global numOfDrones
+    global printSteps
+    global DronesArrayPointer
+    global PrinterCo
+    numOfDrones: dd 0            ; number of drones on the board
+    numberOfNeededTargets: dd 0     ; number of targets to win the game
+    printSteps: dd 0                ; how many steps in order to print the game board
+    beta: dd 0                      ; field of wiew
+    maxDistance: dd 0               ; the maximum distance from the target in order to destroy it
+    seed: dd 0                      ; init for the LFSR
+    PrinterCo:  dd runPrinter       ; Printer Co struct
+                dd PrinterStack + StackSize
+    SchedulerCo: dd runScheduler    ; Scheculer Co struct
+                 dd SchedulerStack + StackSize
+    TargetCo: dd runTarget          ; Target Co struct
+              dd TargetStack + StackSize
+    DroneCos: dd runDrone           ; Drone Cos struct
+              dd DroneStack + StackSize
+    DronesArrayPointer: dd 0        ; Drones array pointer
 section .text
 ; -----------------------------------------------------
 ; Global Functions
 ; -----------------------------------------------------
 global main
 extern printf
-
-; -----------------------------------------------------
-; Name: _start
-; Purpose: Starting function of the program
-; -----------------------------------------------------
-main:
-
-    mov ecx, [esp+4] ; argc
-    mov edx, [esp+8] ; argv
-    top:
-    push ecx ; save registers that printf wastes
-    push edx
-
-    push dword [edx] ; the argument string to display
-    push format_string ; the format string
-    call printf
-    add esp, 8 ; remove the two parameters
-
-    pop edx ; restore registers printf used
-    pop ecx
-
-    add edx, 4 ; point to next argument
-    dec ecx ; count down
-    jnz top ; if not done counting keep going
-
-    ; pop     dword ecx       ; ecx = argc    
-    ; mov     esi,esp         ; esi = argv 
-    ; mov     eax,ecx         ; put the num of argument to ecx
-    ; shl     eax,2           ; compute the size of argv in bytes
-    ; add     eax,esi         ; add the size to the address of argv 
-    ; add     eax,4           ; skip NULL at the end of argv
-    ; push    dword eax       ; char* envp[]
-    ; push    dword esi       ; char* argv[]
-    ; push    dword ecx       ; int argc
-
-
-    mov dword ecx, [numberOfDrones]
-    push ecx
-    push format_int
-    call printf
-    add esp, 8
-    call    main1            ; call main
-
-    mov     ebx,eax
-    mov    eax,1
-    int     0x80
-    nop
-
+extern malloc
+extern runTarget
+extern runDrone
+extern runPrinter
+extern runScheduler
+extern do_Resume
+extern Resume
+global startCo
+global endCo
 ; -----------------------------------------------------
 ; Name: main
 ; Purpose: main function, called from start. 
 ; Init the program details using argv arguments and the other
 ; functions below.
+; //TODO: Enter every arg into its var. Using sscanf
 ; -----------------------------------------------------
-main1:
+main:
+    ; mov ecx, [esp+4] ; argc
+    ; mov edx, [esp+8] ; argv
+    ; top:
+    ; push ecx ; save registers that printf wastes
+    ; push edx
+
+    ; push dword [edx] ; the argument string to display
+    ; push format_string ; the format string
+    ; call printf
+    ; add esp, 8 ; remove the two parameters
+
+    ; pop edx ; restore registers printf used
+    ; pop ecx
+
+    ; add edx, 4 ; point to next argument
+    ; dec ecx ; count down
+    ; jnz top ; if not done counting keep going
+
+    ; mov dword ecx, [numOfDrones]
+    ; push ecx
+    ; push format_int
+    ; call printf
+    ; add esp, 8
+
+    mov     dword [numOfDrones], 3
+    call    initCoRoutines
+    call    startCo
+
+    mov    ebx,eax
+    mov    eax,1
+    int    0x80
+    nop
 ; -----------------------------------------------------
 ; Name: initBoard
 ; Purpose: Function that init the board size and array.
@@ -117,7 +133,65 @@ initLFSR:
 ; in the board game. 
 ; -----------------------------------------------------
 initCoRoutines:
-    ret
+    ;---------Init Printer Co-Routine------------------
+    mov     dword eax, [PrinterCo + FunctionOffset]
+    mov     dword [TempSP], esp
+    mov     dword esp, [PrinterCo + StackOffset]
+    push    eax
+    pushfd
+    pushad
+    mov     dword [PrinterCo + StackOffset], esp
+    ;----------Init Scheduler Co-Routine----------------
+    mov     dword eax, [SchedulerCo + FunctionOffset]
+    mov     dword esp, [SchedulerCo + StackOffset]
+    push    eax
+    pushfd
+    pushad
+    mov     dword [SchedulerCo + StackOffset], esp
+    ;----------Init Target Co-Routine----------------
+    mov     dword eax, [TargetCo + FunctionOffset]
+    mov     dword esp, [TargetCo + StackOffset]
+    push    eax
+    pushfd
+    pushad
+    mov     dword [TargetCo + StackOffset], esp
+    ;----------Init Drones Co-Routines----------------
+    mov     dword eax, [numOfDrones]
+    mul     dword [Const8]
+    push    eax
+    call    malloc
+    mov     dword [DronesArrayPointer], eax     ; DronesArrayPointer = malloc(numOfDrones * 8)
+    mov     edi, 0
+    StartingLoopInitDrones:
+        cmp     dword edi, [numOfDrones]        ; Checking if every drone is initiated
+        je      EndingLoopInitDrones            
+        mov     eax, edi                        ; Doing some stupid stuff for mul 8
+        mov     dword edx, [Const8]             
+        mul     edx
+        mov     dword ebx, [DronesArrayPointer] 
+        add     ebx, eax                        ; ebx = DronesArrayPointer[edi]
+        mov     dword ecx, [runDrone]
+        mov     dword [ebx], ecx                ; DronesArrayPointer[i].func = runDrone
+        push    dword [StackSizeDrone]
+        call    malloc
+        add     dword ebx, StackOffset
+        mov     dword [ebx], eax                ; DronesArrayPointer[i].stack = malloc(StackSize)
+        mov     eax, edi
+        mov     dword edx, [Const8]
+        mul     edx
+        mov     dword ecx, [DronesArrayPointer] 
+        add     ecx, eax
+        mov     dword eax, [ecx + FunctionOffset] ; eax = DronesArrayPointer[i].func
+        mov     dword esp, [ecx + StackOffset]    ; esp = DronesArrayPointer[i].stack
+        push    eax
+        pushfd
+        pushad
+        mov     dword [ecx + StackOffset], esp    ; saving returning address
+        inc     edi
+        jmp     StartingLoopInitDrones
+    EndingLoopInitDrones:
+        mov     dword esp, [TempSP]               ; esp = return address
+        ret
 ; -----------------------------------------------------
 ; Name: initPlayers
 ; Purpose: Function that init the drones in the game
@@ -131,4 +205,21 @@ initPlayers:
 ; -----------------------------------------------------
 calculateRandomNumber:
     ret
- 
+; -----------------------------------------------------
+; Name: startCo
+; Purpose: We start scheduling by suspending main() and resuming a scheduler co-routine.
+; -----------------------------------------------------
+startCo:
+    pushad
+    mov     dword [MainSP], esp
+    mov     dword ebx, [SchedulerCo]
+    jmp     do_Resume
+; -----------------------------------------------------
+; Name: endCo
+; Purpose: We end scheduling and go back to main().
+; -----------------------------------------------------
+endCo:
+    mov     dword esp, [MainSP]
+    popad
+
+
