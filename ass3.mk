@@ -1,5 +1,3 @@
-LDFLAGS: LD_EXTRA_FLAGS =-Wl,--gc-sections -nostartfiles -Wl,-e,_trampoline
-
 all: ass3
 
 ass3: ass3.o drone.o printer.o scheduler.o target.o

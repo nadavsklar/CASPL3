@@ -2,6 +2,7 @@
 ; Description: Main file. Init the game.
 ; Date: 20.5.2019
 ; Change Log: 21.5.2019 - Adding some documentation
+;             26.5.2019 - Compiling and adding makefile
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
