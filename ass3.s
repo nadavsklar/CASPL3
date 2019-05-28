@@ -133,14 +133,15 @@ initLFSR:
 ; in the board game. 
 ; -----------------------------------------------------
 initCoRoutines:
+    mov     dword [TempSP], esp
     ;---------Init Printer Co-Routine------------------
     mov     dword eax, [PrinterCo + FunctionOffset]
-    mov     dword [TempSP], esp
     mov     dword esp, [PrinterCo + StackOffset]
     push    eax
     pushfd
     pushad
     mov     dword [PrinterCo + StackOffset], esp
+    mov     dword esp, [TempSP]
     ;----------Init Scheduler Co-Routine----------------
     mov     dword eax, [SchedulerCo + FunctionOffset]
     mov     dword esp, [SchedulerCo + StackOffset]
@@ -148,6 +149,7 @@ initCoRoutines:
     pushfd
     pushad
     mov     dword [SchedulerCo + StackOffset], esp
+    mov     dword esp, [TempSP]
     ;----------Init Target Co-Routine----------------
     mov     dword eax, [TargetCo + FunctionOffset]
     mov     dword esp, [TargetCo + StackOffset]
@@ -155,6 +157,7 @@ initCoRoutines:
     pushfd
     pushad
     mov     dword [TargetCo + StackOffset], esp
+    mov     dword esp, [TempSP]
     ;----------Init Drones Co-Routines----------------
     mov     dword eax, [numOfDrones]
     mul     dword [Const8]
@@ -163,34 +166,35 @@ initCoRoutines:
     mov     dword [DronesArrayPointer], eax     ; DronesArrayPointer = malloc(numOfDrones * 8)
     mov     edi, 0
     StartingLoopInitDrones:
-        cmp     dword edi, [numOfDrones]        ; Checking if every drone is initiated
+        cmp     dword edi, [numOfDrones]            ; Checking if every drone is initiated
         je      EndingLoopInitDrones            
-        mov     eax, edi                        ; Doing some stupid stuff for mul 8
+        mov     eax, edi                            ; Doing some stupid stuff for mul 8
         mov     dword edx, [Const8]             
         mul     edx
         mov     dword ebx, [DronesArrayPointer] 
-        add     ebx, eax                        ; ebx = DronesArrayPointer[edi]
+        add     ebx, eax                            ; ebx = DronesArrayPointer[edi]
         mov     dword ecx, [runDrone]
-        mov     dword [ebx], ecx                ; DronesArrayPointer[i].func = runDrone
+        mov     dword [ebx], ecx                    ; DronesArrayPointer[i].func = runDrone
         push    dword [StackSizeDrone]
         call    malloc
         add     dword ebx, StackOffset
-        mov     dword [ebx], eax                ; DronesArrayPointer[i].stack = malloc(StackSize)
+        mov     dword [ebx], eax                    ; DronesArrayPointer[i].stack = malloc(StackSize)
         mov     eax, edi
         mov     dword edx, [Const8]
         mul     edx
         mov     dword ecx, [DronesArrayPointer] 
         add     ecx, eax
-        mov     dword eax, [ecx + FunctionOffset] ; eax = DronesArrayPointer[i].func
-        mov     dword esp, [ecx + StackOffset]    ; esp = DronesArrayPointer[i].stack
+        mov     dword eax, [ecx + FunctionOffset]   ; eax = DronesArrayPointer[i].func
+        mov     dword esp, [ecx + StackOffset]      ; esp = DronesArrayPointer[i].stack
         push    eax
         pushfd
         pushad
-        mov     dword [ecx + StackOffset], esp    ; saving returning address
+        mov     dword [ecx + StackOffset], esp      ; saving returning address
+        mov     dword esp, [TempSP]
         inc     edi
         jmp     StartingLoopInitDrones
     EndingLoopInitDrones:
-        mov     dword esp, [TempSP]               ; esp = return address
+        mov     dword esp, [TempSP]                 ; esp = return address
         ret
 ; -----------------------------------------------------
 ; Name: initPlayers
