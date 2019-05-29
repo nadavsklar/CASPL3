@@ -20,7 +20,6 @@ section .data           ; we define (global) initialized variables in .data sect
     extern numOfDrones
     extern printSteps
     extern DronesArrayPointer
-    extern PrinterCo
     DroneIndex: dd 0
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
@@ -81,7 +80,8 @@ Resume:
     mov     dword edx, [Curr]               ; edx = &currentCoRoutineStruct
     mov     dword [edx + StackOffset], esp  ; save current esp
 do_Resume:
-    mov     dword esp, [ebx + StackOffset]
+    mov     dword esp, ebx
+    add     esp, StackOffset
     a:
     mov     dword [Curr], ebx               ; Curr points to the struct of the current co-routine
     b:

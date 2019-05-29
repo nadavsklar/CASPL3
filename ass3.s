@@ -4,7 +4,6 @@
 ; Change Log: 21.5.2019 - Adding some documentation
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
-;             27.5.2019 - Changing structs to other form.
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -16,39 +15,27 @@ section	.rodata			        ; we define (global) read-only variables in .rodata se
     global format_int
     global format_string
     StackSizeDrone: dd 16384
-    taps: dd 11, 13, 14, 16             ; Unique taps for LFSR
-    format_int: db "%d", 10, 0          ; format int printf
-    format_string: db "%s", 10, 0       ; format string printf
-    FunctionOffset equ 0                ; offset of pointer to co-routine function in co-routine struct 
+    taps: dd 11, 13, 14, 16     ; Unique taps for LFSR
+    format_int: db "%d", 10, 0  ; format int printf
+    format_string: db "%s", 10, 0   ; format string printf
+    FunctionOffset equ 0                 ; offset of pointer to co-routine function in co-routine struct 
     StackOffset equ 4                   ; offset of pointer to co-routine stack in co-routine struct
     Const8: dd 8
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
 ; -----------------------------------------------------
-section .bss			                 ; we define (global) uninitialized variables in .bss section
+section .bss			        ; we define (global) uninitialized variables in .bss section
     global Curr
-    LFSR: resw 1                         ; register for randon numbers
-    StackSize equ 16*1024                ; 16 kb, for stack size
-    PrinterStack: resb StackSize         ; stack for each co-routine
+    LFSR: resw 1                ; register for randon numbers
+    StackSize equ 16*1024             ; 16 kb, for stack size
+    PrinterStack: resb StackSize          ; stack for each co-routine
     TargetStack: resb StackSize
     SchedulerStack: resb StackSize
     DroneStack: resb StackSize
-    Curr: resd 1                         ; Curr Co Routine 
-    TempSP: resd 1                       ; Temp stack Pointer
-    MainSP: resd 1                       ; Main stack pointer
-    struc PrinterCoRoutine               ; printer
-        funcP: resd 1
-        stackP: resd 1
-    endstruc
-    struc SchedulerCoRoutine
-        funcS: resd 1
-        stackS: resd 1
-    endstruc
-    struc TargetCoRoutine
-        funcT: resd 1
-        stackT: resd 1
-    endstruc
+    Curr: resd 1
+    TempSP: resd 1
+    MainSP: resd 1
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
@@ -63,21 +50,12 @@ section .data                   ; we define (global) initialized variables in .d
     beta: dd 0                      ; field of wiew
     maxDistance: dd 0               ; the maximum distance from the target in order to destroy it
     seed: dd 0                      ; init for the LFSR
-    PrinterCo:                      ; Printer Co struct
-        istruc PrinterCoRoutine
-            at funcP, dd runPrinter
-            at stackP, dd PrinterStack + StackSize
-        iend
-    SchedulerCo:
-        istruc SchedulerCoRoutine
-            at funcP, dd runScheduler
-            at stackP, dd SchedulerStack + StackSize
-        iend
-    TargetCo:
-        istruc TargetCoRoutine
-            at funcT, dd runTarget
-            at stackT, dd TargetStack + StackSize
-        iend
+    PrinterCo:  dd runPrinter       ; Printer Co struct
+                dd PrinterStack + StackSize
+    SchedulerCo: dd runScheduler    ; Scheculer Co struct
+                 dd SchedulerStack + StackSize
+    TargetCo: dd runTarget          ; Target Co struct
+              dd TargetStack + StackSize
     DroneCos: dd runDrone           ; Drone Cos struct
               dd DroneStack + StackSize
     DronesArrayPointer: dd 0        ; Drones array pointer
@@ -153,7 +131,6 @@ initLFSR:
 ; Name: initCoRoutines
 ; Purpose: Function that init the Threads (Co-Routines)
 ; in the board game. 
-; // TODO: fix init drones!
 ; -----------------------------------------------------
 initCoRoutines:
     ;---------Init Printer Co-Routine------------------
@@ -205,35 +182,29 @@ initCoRoutines:
 ; Purpose: Function that init the Printer-Co-Routine
 ; -----------------------------------------------------
 initPrinter:
-    mov     dword eax, PrinterStack
-    mov     dword [PrinterCo + stackP], eax
-    mov     dword eax, runPrinter
-    mov     dword [PrinterCo + funcP], eax
-    mov     dword eax, [PrinterCo + funcP]       ; get initial EIP value - pointer to CO function
-    mov     dword [TempSP], esp                  ; save esp value
-    mov     dword esp, [PrinterCo + stackP]      ; get initial ESP value – pointer to COi stack
-    push    eax                                  ; push return address
-    pushfd                                       ; push flags
-    pushad                                       ; push registers
-    mov     dword [PrinterCo + stackP], esp      ; save new SPi value
-    mov     dword esp, [TempSP]                  ; restore esp value
+    mov     dword ebx, [PrinterCo]              ; get Pointer to PrinterCo struct
+    mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
+    mov     dword [TempSP], esp                 ; save esp value
+    mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
+    push    eax                                ; push return address
+    pushfd                                  ; push flags
+    pushad                                  ; push registers
+    mov     [ebx + StackOffset], esp            ; save new SPi value
+    mov     dword esp, [TempSP]                 ; restore esp value
     ret
 ; -----------------------------------------------------
 ; Name: initTarget
 ; Purpose: Function that init the Target-Co-Routine
 ; -----------------------------------------------------
 initTarget:
-    mov     dword eax, TargetStack
-    mov     dword [TargetCo + stackT], eax
-    mov     dword eax, runTarget
-    mov     dword [TargetCo + funcT], eax
-    mov     dword eax, [TargetCo + funcT]       ; get initial EIP value - pointer to CO function
+    mov     dword ebx, [TargetCo]               ; get Pointer to PrinterCo struct
+    mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
-    mov     dword esp, [TargetCo + stackT]      ; get initial ESP value – pointer to COi stack
-    push    eax                                 ; push return address
-    pushfd                                      ; push flags
-    pushad                                      ; push registers
-    mov     dword [TargetCo + stackT], esp      ; save new SPi value
+    mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
+    push    eax                                ; push return address
+    pushfd                                  ; push flags
+    pushad                                  ; push registers
+    mov     [ebx + StackOffset], esp            ; save new SPi value
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
 ; -----------------------------------------------------
@@ -241,17 +212,14 @@ initTarget:
 ; Purpose: Function that init the Scheduler-Co-Routine
 ; -----------------------------------------------------
 initScheduler:
-    mov     dword eax, SchedulerStack
-    mov     dword [SchedulerCo + stackS], eax
-    mov     dword eax, runScheduler
-    mov     dword [SchedulerCo + funcS], eax
-    mov     dword eax, [SchedulerCo + funcS]       ; get initial EIP value - pointer to CO function
+    mov     dword ebx, [SchedulerCo]               ; get Pointer to PrinterCo struct
+    mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
-    mov     dword esp, [SchedulerCo + stackS]      ; get initial ESP value – pointer to COi stack
-    push    eax                                 ; push return address
-    pushfd                                      ; push flags
-    pushad                                      ; push registers
-    mov     dword [SchedulerCo + stackS], esp      ; save new SPi value
+    mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
+    push    eax                                ; push return address
+    pushfd                                  ; push flags
+    pushad                                  ; push registers
+    mov     [ebx + StackOffset], esp            ; save new SPi value
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
 ; -----------------------------------------------------
