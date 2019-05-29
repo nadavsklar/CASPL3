@@ -38,16 +38,16 @@ section .bss			                 ; we define (global) uninitialized variables in 
     TempSP: resd 1                       ; Temp stack Pointer
     MainSP: resd 1                       ; Main stack pointer
     struc PrinterCoRoutine               ; printer
-        func: resd 1
-        stack: resd 1
+        funcP: resd 1
+        stackP: resd 1
     endstruc
     struc SchedulerCoRoutine
-        func: resd 1
-        stack: resd 1
+        funcS: resd 1
+        stackS: resd 1
     endstruc
     struc TargetCoRoutine
-        func: resd 1
-        stack: resd 1
+        funcT: resd 1
+        stackT: resd 1
     endstruc
 ; -----------------------------------------------------
 ; Global initialized vars.
@@ -65,18 +65,18 @@ section .data                   ; we define (global) initialized variables in .d
     seed: dd 0                      ; init for the LFSR
     PrinterCo:                      ; Printer Co struct
         istruc PrinterCoRoutine
-            at func, dd runPrinter
-            at stack, dd PrinterStack + StackSize
+            at funcP, dd runPrinter
+            at stackP, dd PrinterStack + StackSize
         iend
     SchedulerCo:
         istruc SchedulerCoRoutine
-            at func, dd runScheduler
-            at stack, dd SchedulerStack + StackSize
+            at funcP, dd runScheduler
+            at stackP, dd SchedulerStack + StackSize
         iend
     TargetCo:
         istruc TargetCoRoutine
-            at func, dd runTarget
-            at stack, dd TargetStack + StackSize
+            at funcT, dd runTarget
+            at stackT, dd TargetStack + StackSize
         iend
     DroneCos: dd runDrone           ; Drone Cos struct
               dd DroneStack + StackSize
@@ -206,17 +206,17 @@ initCoRoutines:
 ; -----------------------------------------------------
 initPrinter:
     mov     dword eax, PrinterStack
-    mov     dword [PrinterCo + stack], eax
+    mov     dword [PrinterCo + stackP], eax
     mov     dword eax, runPrinter
-    mov     dword [PrinterCo + func], eax
-    mov     dword eax, [PrinterCo + func]       ; get initial EIP value - pointer to CO function
-    mov     dword [TempSP], esp                 ; save esp value
-    mov     dword esp, [PrinterCo + stack]      ; get initial ESP value – pointer to COi stack
-    push    eax                                 ; push return address
-    pushfd                                      ; push flags
-    pushad                                      ; push registers
-    mov     dword [PrinterCo + stack], esp      ; save new SPi value
-    mov     dword esp, [TempSP]                 ; restore esp value
+    mov     dword [PrinterCo + funcP], eax
+    mov     dword eax, [PrinterCo + funcP]       ; get initial EIP value - pointer to CO function
+    mov     dword [TempSP], esp                  ; save esp value
+    mov     dword esp, [PrinterCo + stackP]      ; get initial ESP value – pointer to COi stack
+    push    eax                                  ; push return address
+    pushfd                                       ; push flags
+    pushad                                       ; push registers
+    mov     dword [PrinterCo + stackP], esp      ; save new SPi value
+    mov     dword esp, [TempSP]                  ; restore esp value
     ret
 ; -----------------------------------------------------
 ; Name: initTarget
@@ -224,16 +224,16 @@ initPrinter:
 ; -----------------------------------------------------
 initTarget:
     mov     dword eax, TargetStack
-    mov     dword [TargetCo + stack], eax
+    mov     dword [TargetCo + stackT], eax
     mov     dword eax, runTarget
-    mov     dword [TargetCo + func], eax
-    mov     dword eax, [TargetCo + func]       ; get initial EIP value - pointer to CO function
+    mov     dword [TargetCo + funcT], eax
+    mov     dword eax, [TargetCo + funcT]       ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
-    mov     dword esp, [TargetCo + stack]      ; get initial ESP value – pointer to COi stack
+    mov     dword esp, [TargetCo + stackT]      ; get initial ESP value – pointer to COi stack
     push    eax                                 ; push return address
     pushfd                                      ; push flags
     pushad                                      ; push registers
-    mov     dword [TargetCo + stack], esp      ; save new SPi value
+    mov     dword [TargetCo + stackT], esp      ; save new SPi value
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
 ; -----------------------------------------------------
@@ -242,16 +242,16 @@ initTarget:
 ; -----------------------------------------------------
 initScheduler:
     mov     dword eax, SchedulerStack
-    mov     dword [SchedulerCo + stack], eax
+    mov     dword [SchedulerCo + stackS], eax
     mov     dword eax, runScheduler
-    mov     dword [SchedulerCo + func], eax
-    mov     dword eax, [SchedulerCo + func]       ; get initial EIP value - pointer to CO function
+    mov     dword [SchedulerCo + funcS], eax
+    mov     dword eax, [SchedulerCo + funcS]       ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
-    mov     dword esp, [SchedulerCo + stack]      ; get initial ESP value – pointer to COi stack
+    mov     dword esp, [SchedulerCo + stackS]      ; get initial ESP value – pointer to COi stack
     push    eax                                 ; push return address
     pushfd                                      ; push flags
     pushad                                      ; push registers
-    mov     dword [SchedulerCo + stack], esp      ; save new SPi value
+    mov     dword [SchedulerCo + stackS], esp      ; save new SPi value
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
 ; -----------------------------------------------------
