@@ -20,6 +20,7 @@ section .data           ; we define (global) initialized variables in .data sect
     extern numOfDrones
     extern printSteps
     extern DronesArrayPointer
+    extern PrinterCo
     DroneIndex: dd 0
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
