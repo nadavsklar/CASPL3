@@ -15,11 +15,14 @@ extern format_string
 ; Global initialized vars.
 ; -----------------------------------------------------
 section .data           ; we define (global) initialized variables in .data section
+    extern SchedulerCo
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
 ; -----------------------------------------------------
 section .bss			; we define (global) uninitialized variables in .bss section
+    extern MainSP
+
 section .text
 ; -----------------------------------------------------
 ; Global Functions
@@ -30,17 +33,22 @@ global runDrone
 ; -----------------------------------------------------
 extern calculateRandomNumber
 extern printf
+extern Resume
+extern do_Resume
 ; -----------------------------------------------------
 ; Name: runDrone
 ; Purpose: Main function of drone activity. Works according
 ; to the algorithm given.
 ; -----------------------------------------------------
 runDrone:
-    mov eax, 123456789
+    mov eax, 10
     push eax
     push format_int
     call printf
     add esp, 8
+    pushad
+    mov     dword ebx, SchedulerCo
+    call    Resume 
     ret
 ; -----------------------------------------------------
 ; Name: calculateNewPosition

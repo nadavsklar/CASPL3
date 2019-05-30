@@ -51,26 +51,32 @@ global do_Resume
 ; -----------------------------------------------------
 runScheduler:
     StartLoopingRoundRobinDroneCoRoutines:
-        mov     dword eax, [DroneIndex]
-        mul     dword [Const8]
-        mov     dword ebx, [DronesArrayPointer + eax]  
-        call    Resume
         inc     dword [DroneIndex]
-        mov     dword eax, [DroneIndex]
         mov     dword ecx, [numOfDrones]
-        mov     dword edx, 0
-        div     ecx
-        mov     dword [DroneIndex], edx
+        cmp     dword ecx, [DroneIndex]
+        jge     Nothing
+        mov     dword [DroneIndex], 0
 
+    Nothing:
         mov     dword edi, [printSteps]
         cmp     dword [DroneIndex], edi
         je      SwitchingToPrinterCoRoutine
+        jmp     SwitchingToDroneCoRotine
+
+    SwitchingToDroneCoRotine:
+        mov     dword ebx, [DronesArrayPointer]
+        mov     dword eax, [DroneIndex]
+        mul     dword [Const8]
+        add     dword ebx, eax
+        c:
+        call    Resume
         jmp     StartLoopingRoundRobinDroneCoRoutines
-        
+
     SwitchingToPrinterCoRoutine:
-        mov     dword ebx, [PrinterCo]
+        mov     dword ebx, PrinterCo
         call    Resume
     ret
+
 ; -----------------------------------------------------
 ; Name: Resume & do_Resume
 ; Purpose: 2 main functions that handles the co-routine changes.
@@ -83,9 +89,12 @@ Resume:
     mov     dword [edx + StackOffset], esp  ; save current esp
 do_Resume:
     mov     dword esp, [ebx + StackOffset]
+    e1:
     mov     dword [Curr], ebx               ; Curr points to the struct of the current co-routine
+    e2:
     popad
     popfd
+    e:
     ret     
 
 

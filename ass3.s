@@ -27,6 +27,7 @@ section	.rodata			        ; we define (global) read-only variables in .rodata se
 ; -----------------------------------------------------
 section .bss			        ; we define (global) uninitialized variables in .bss section
     global Curr
+    global MainSP
     LFSR: resw 1                ; register for randon numbers
     StackSize equ 16*1024             ; 16 kb, for stack size
     PrinterStack: resb StackSize          ; stack for each co-routine
@@ -44,12 +45,14 @@ section .data                   ; we define (global) initialized variables in .d
     global printSteps
     global DronesArrayPointer
     global PrinterCo
+    global SchedulerCo
     numOfDrones: dd 0            ; number of drones on the board
     numberOfNeededTargets: dd 0     ; number of targets to win the game
     printSteps: dd 0                ; how many steps in order to print the game board
     beta: dd 0                      ; field of wiew
     maxDistance: dd 0               ; the maximum distance from the target in order to destroy it
     seed: dd 0                      ; init for the LFSR
+    TmpDronesArrayPointer: dd 1     ; Tmp drones array pointer
     PrinterCo:  dd runPrinter       ; Printer Co struct
                 dd PrinterStack + StackSize
     SchedulerCo: dd runScheduler    ; Scheculer Co struct
@@ -58,7 +61,7 @@ section .data                   ; we define (global) initialized variables in .d
               dd TargetStack + StackSize
     DroneCos: dd runDrone           ; Drone Cos struct
               dd DroneStack + StackSize
-    DronesArrayPointer: dd 0        ; Drones array pointer
+    DronesArrayPointer: dd runDrone ; Drones array pointer
 section .text
 ; -----------------------------------------------------
 ; Global Functions
@@ -145,37 +148,42 @@ initCoRoutines:
     mul     dword [Const8]
     push    eax
     call    malloc
-    mov     dword [DronesArrayPointer], eax     ; DronesArrayPointer = malloc(numOfDrones * 8)
+    mov     dword [DronesArrayPointer], eax             ; DronesArrayPointer = malloc(numOfDrones * 8)
     mov     edi, 0
     StartingLoopInitDrones:
         cmp     dword edi, [numOfDrones]            ; Checking if every drone is initiated
         je      EndingLoopInitDrones            
-        mov     eax, edi                            ; Doing some stupid stuff for mul 8
+        mov     eax, edi                                ; Doing some stupid stuff for mul 8
         mov     dword edx, [Const8]             
         mul     edx
-        mov     dword ebx, DronesArrayPointer 
-        add     ebx, eax                            ; ebx = DronesArrayPointer[edi]
-        mov     dword ecx, [runDrone]
-        mov     dword [ebx], ecx                    ; DronesArrayPointer[i].func = runDrone
+        mov     dword ebx, [DronesArrayPointer]
+        add     ebx, eax                                ; ebx = DronesArrayPointer[edi]
+        mov     dword ecx, runDrone
+        mov     dword [ebx], ecx                        ; DronesArrayPointer[i].func = runDrone
         push    dword [StackSizeDrone]
         call    malloc
         add     dword ebx, StackOffset
-        mov     dword [ebx], eax                    ; DronesArrayPointer[i].stack = malloc(StackSize)
+        mov     dword [ebx], eax                        ; DronesArrayPointer[i].stack = malloc(StackSize)
         mov     eax, edi
         mov     dword edx, [Const8]
         mul     edx
-        mov     dword ecx, DronesArrayPointer
+        mov     dword ecx, [DronesArrayPointer]
         add     ecx, eax
-        mov     dword eax, [ecx + FunctionOffset]   ; eax = DronesArrayPointer[i].func
-        mov     dword esp, [ecx + StackOffset]      ; esp = DronesArrayPointer[i].stack
+        mov     dword eax, [ecx + FunctionOffset]       ; eax = DronesArrayPointer[i].func
+        mov     dword esp, [ecx + StackOffset]          ; esp = DronesArrayPointer[i].stack
+        a:
         push    eax
         pushfd
         pushad
-        mov     dword [ecx + StackOffset], esp      ; saving returning address
+        aa:
+        mov     dword [ecx + StackOffset], esp          ; saving returning address
         inc     edi
         jmp     StartingLoopInitDrones
     EndingLoopInitDrones:
-        mov     dword esp, [TempSP]                 ; esp = return address
+        mov     dword ebx, [DronesArrayPointer]
+        mov     dword ecx, runDrone
+        mov     dword [ebx], ecx
+        mov     dword esp, [TempSP]                     ; esp = return address
         ret
 
 ; -----------------------------------------------------
@@ -188,6 +196,7 @@ initPrinter:
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
     push    eax                                 ; push return address
+    aprinter:
     pushfd                                      ; push flags
     pushad                                      ; push registers
     mov     [ebx + StackOffset], esp            ; save new SPi value
@@ -203,6 +212,7 @@ initTarget:
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
     push    eax                                 ; push return address
+    atarget:
     pushfd                                      ; push flags
     pushad                                      ; push registers
     mov     [ebx + StackOffset], esp            ; save new SPi value
@@ -217,6 +227,7 @@ initScheduler:
     mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
+    ascheduler:
     push    eax                                 ; push return address
     pushfd                                      ; push flags
     pushad                                      ; push registers
