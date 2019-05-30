@@ -131,7 +131,7 @@ initLFSR:
 ; Name: initCoRoutines
 ; Purpose: Function that init the Threads (Co-Routines)
 ; in the board game. 
-; -----------------------------------------------------
+; --------------------------------------mov ebx, [ebp+8]---------------
 initCoRoutines:
     ;---------Init Printer Co-Routine------------------
     call initPrinter
@@ -140,6 +140,7 @@ initCoRoutines:
     ;----------Init Target Co-Routine----------------
     call initTarget
     ;----------Init Drones Co-Routines----------------
+    mov     dword [TempSP], esp
     mov     dword eax, [numOfDrones]
     mul     dword [Const8]
     push    eax
@@ -152,7 +153,7 @@ initCoRoutines:
         mov     eax, edi                            ; Doing some stupid stuff for mul 8
         mov     dword edx, [Const8]             
         mul     edx
-        mov     dword ebx, [DronesArrayPointer] 
+        mov     dword ebx, DronesArrayPointer 
         add     ebx, eax                            ; ebx = DronesArrayPointer[edi]
         mov     dword ecx, [runDrone]
         mov     dword [ebx], ecx                    ; DronesArrayPointer[i].func = runDrone
@@ -163,7 +164,7 @@ initCoRoutines:
         mov     eax, edi
         mov     dword edx, [Const8]
         mul     edx
-        mov     dword ecx, [DronesArrayPointer] 
+        mov     dword ecx, DronesArrayPointer
         add     ecx, eax
         mov     dword eax, [ecx + FunctionOffset]   ; eax = DronesArrayPointer[i].func
         mov     dword esp, [ecx + StackOffset]      ; esp = DronesArrayPointer[i].stack
@@ -171,24 +172,24 @@ initCoRoutines:
         pushfd
         pushad
         mov     dword [ecx + StackOffset], esp      ; saving returning address
-        mov     dword esp, [TempSP]
         inc     edi
         jmp     StartingLoopInitDrones
     EndingLoopInitDrones:
         mov     dword esp, [TempSP]                 ; esp = return address
         ret
+
 ; -----------------------------------------------------
 ; Name: initPrinter
 ; Purpose: Function that init the Printer-Co-Routine
 ; -----------------------------------------------------
 initPrinter:
-    mov     dword ebx, [PrinterCo]              ; get Pointer to PrinterCo struct
+    mov     dword ebx, PrinterCo                ; get Pointer to PrinterCo struct
     mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
-    push    eax                                ; push return address
-    pushfd                                  ; push flags
-    pushad                                  ; push registers
+    push    eax                                 ; push return address
+    pushfd                                      ; push flags
+    pushad                                      ; push registers
     mov     [ebx + StackOffset], esp            ; save new SPi value
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
@@ -197,13 +198,13 @@ initPrinter:
 ; Purpose: Function that init the Target-Co-Routine
 ; -----------------------------------------------------
 initTarget:
-    mov     dword ebx, [TargetCo]               ; get Pointer to PrinterCo struct
+    mov     dword ebx, TargetCo                 ; get Pointer to PrinterCo struct
     mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
-    push    eax                                ; push return address
-    pushfd                                  ; push flags
-    pushad                                  ; push registers
+    push    eax                                 ; push return address
+    pushfd                                      ; push flags
+    pushad                                      ; push registers
     mov     [ebx + StackOffset], esp            ; save new SPi value
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
@@ -212,13 +213,13 @@ initTarget:
 ; Purpose: Function that init the Scheduler-Co-Routine
 ; -----------------------------------------------------
 initScheduler:
-    mov     dword ebx, [SchedulerCo]               ; get Pointer to PrinterCo struct
+    mov     dword ebx, SchedulerCo              ; get Pointer to PrinterCo struct
     mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
-    push    eax                                ; push return address
-    pushfd                                  ; push flags
-    pushad                                  ; push registers
+    push    eax                                 ; push return address
+    pushfd                                      ; push flags
+    pushad                                      ; push registers
     mov     [ebx + StackOffset], esp            ; save new SPi value
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
@@ -242,8 +243,9 @@ calculateRandomNumber:
 startCo:
     pushad
     mov     dword [MainSP], esp
-    mov     dword ebx, [SchedulerCo]
+    mov     dword ebx, SchedulerCo
     jmp     do_Resume
+
 ; -----------------------------------------------------
 ; Name: endCo
 ; Purpose: We end scheduling and go back to main().
@@ -251,5 +253,4 @@ startCo:
 endCo:
     mov     dword esp, [MainSP]
     popad
-
 

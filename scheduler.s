@@ -66,6 +66,7 @@ runScheduler:
         cmp     dword [DroneIndex], edi
         je      SwitchingToPrinterCoRoutine
         jmp     StartLoopingRoundRobinDroneCoRoutines
+        
     SwitchingToPrinterCoRoutine:
         mov     dword ebx, [PrinterCo]
         call    Resume
@@ -81,11 +82,8 @@ Resume:
     mov     dword edx, [Curr]               ; edx = &currentCoRoutineStruct
     mov     dword [edx + StackOffset], esp  ; save current esp
 do_Resume:
-    mov     dword esp, ebx
-    add     esp, StackOffset
-    a:
+    mov     dword esp, [ebx + StackOffset]
     mov     dword [Curr], ebx               ; Curr points to the struct of the current co-routine
-    b:
     popad
     popfd
     ret     
