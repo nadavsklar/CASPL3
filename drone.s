@@ -71,4 +71,3 @@ calculateNewPosition:
 ; -----------------------------------------------------
 destoryTarget:
     ret
-

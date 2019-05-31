@@ -49,6 +49,12 @@ section .data                   ; we define (global) initialized variables in .d
     global PrinterCo
     global SchedulerCo
     extern currentSteps
+    seed: dw 0                      ; init for the LFSR
+    LFSR16bit: dd 0
+    LFSR14bit: dd 0
+    LFSR13bit: dd 0
+    LFSR11bit: dd 0
+    randomNum: dd 0
     numOfDrones: dd 0            ; number of drones on the board
     numberOfNeededTargets: dd 0     ; number of targets to win the game
     printSteps: dd 0                ; how many steps in order to print the game board
@@ -64,11 +70,6 @@ section .data                   ; we define (global) initialized variables in .d
     DroneCos: dd runDrone           ; Drone Cos struct
               dd DroneStack + StackSize
     DronesArrayPointer: dd runDrone ; Drones array pointer
-    seed: dw 0                      ; init for the LFSR
-    LFSR16bit: dd 0
-    LFSR14bit: dd 0
-    LFSR13bit: dd 0
-    LFSR11bit: dd 0
 section .text
 ; -----------------------------------------------------
 ; Global & Extern Functions
@@ -143,13 +144,12 @@ main:
     pop     edx
     add     edx, 4
     ; ----------- Seed ----------------------
-    push    dword seed
+    push    dword LFSR
     push    format_int
     push    dword [edx]
     call    sscanf
     add     esp, 12
-    
-    call    initLFSR
+
     call    initCoRoutines
     call    startCo
 
@@ -162,16 +162,6 @@ main:
 ; Purpose: Function that init the board size and array.
 ; -----------------------------------------------------
 initBoard:
-    ret
-; -----------------------------------------------------
-; Name: initLFSR
-; Purpose: Function that init the LFSR register according
-; to the taps vars and the seed given.
-; -----------------------------------------------------
-initLFSR:
-    mov     eax, 0
-    mov     dword eax, [seed]
-    mov     dword [LFSR], eax
     ret
 ; -----------------------------------------------------
 ; Name: initCoRoutines
@@ -191,6 +181,7 @@ initCoRoutines:
     mul     dword [Const8]
     push    eax
     call    malloc
+    add     esp, 4
     mov     dword [DronesArrayPointer], eax             ; DronesArrayPointer = malloc(numOfDrones * 8)
     mov     edi, 0
     StartingLoopInitDrones:
@@ -205,6 +196,7 @@ initCoRoutines:
         mov     dword [ebx], ecx                        ; DronesArrayPointer[i].func = runDrone
         push    dword [StackSizeDrone]
         call    malloc
+        add     esp, 4
         add     dword ebx, StackOffset
         mov     dword [ebx], eax                        ; DronesArrayPointer[i].stack = malloc(StackSize)
         mov     eax, edi
@@ -213,11 +205,13 @@ initCoRoutines:
         mov     dword ecx, [DronesArrayPointer]
         add     ecx, eax
         mov     dword eax, [ecx + FunctionOffset]       ; eax = DronesArrayPointer[i].func
+        mov     dword [TempSP], esp
         mov     dword esp, [ecx + StackOffset]          ; esp = DronesArrayPointer[i].stack
         push    eax
         pushfd
         pushad
         mov     dword [ecx + StackOffset], esp          ; saving returning address
+        mov     dword esp, [TempSP]
         inc     edi
         jmp     StartingLoopInitDrones
     EndingLoopInitDrones:
@@ -285,7 +279,54 @@ initPlayers:
 ; -----------------------------------------------------
 calculateRandomNumber:
     ; ---- first getting taps position bits -------
-    mov     dword ebx, [LFSR + 1]
+    mov     dword eax, [LFSR] 
+    mov     dword [randomNum], 0
+    mov     dword [randomNum], eax           
+    ; -------- 16 ------------
+    mov     dword ecx, 0
+    mov     dword ecx, [LFSR]   
+    and     ecx, 1
+    mov     dword [LFSR16bit], 0
+    mov     dword [LFSR16bit], ecx
+    ; -------- 14 ------------
+    mov     dword ecx, 0
+    mov     dword ecx, [LFSR] 
+    and     ecx, 4
+    shr     ecx, 2
+    mov     dword [LFSR14bit], 0
+    mov     dword [LFSR14bit], ecx
+    ; -------- 13 ------------
+    mov     dword ecx, 0
+    mov     dword ecx, [LFSR] 
+    and     ecx, 8
+    shr     ecx, 3
+    mov     dword [LFSR13bit], 0
+    mov     dword [LFSR13bit], ecx
+    ; -------- 11 ------------
+    mov     dword ecx, 0
+    mov     dword ecx, [LFSR] 
+    and     ecx, 32
+    shr     ecx, 5
+    mov     dword [LFSR11bit], 0
+    mov     dword [LFSR11bit], ecx
+    ; -------- Xor -----------
+
+    mov     dword ecx, [LFSR16bit]
+    mov     dword edx, [LFSR14bit]
+    xor     ecx, edx                ; ecx = ecx XOR edx. 16bit Xor 14bit
+    mov     dword edx, [LFSR13bit]
+    xor     ecx, edx                ; ecx = ecx Xor edx. (16 xor 14) xor 13
+    mov     dword edx, [LFSR11bit]  ; ecx = ecx Xor edx. ((16 xor 14) xor 13) xor 11
+    xor     ecx, edx
+    mov     dword edx, [LFSR]
+    shr     edx, 1
+    cmp     ecx, 1
+    jne     returnRandomNumber
+    addToLFSR:
+        add     edx, 32768
+    returnRandomNumber:
+        mov     dword [LFSR], edx
+    ; ------------ Return number in randomNum ---------------
     ret
 ; -----------------------------------------------------
 ; Name: startCo
@@ -304,4 +345,3 @@ startCo:
 endCo:
     mov     dword esp, [MainSP]
     popad
-

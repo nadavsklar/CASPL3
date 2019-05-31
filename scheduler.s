@@ -96,5 +96,3 @@ do_Resume:
     popad
     popfd
     ret     
-
-
