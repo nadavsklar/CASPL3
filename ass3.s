@@ -30,7 +30,6 @@ section .bss			        ; we define (global) uninitialized variables in .bss sect
     global Curr
     global MainSP
     global TempSP
-    LFSR: resw 1                ; register for randon numbers
     StackSize equ 16*1024             ; 16 kb, for stack size
     PrinterStack: resb StackSize          ; stack for each co-routine
     TargetStack: resb StackSize
@@ -39,6 +38,7 @@ section .bss			        ; we define (global) uninitialized variables in .bss sect
     Curr: resd 1
     TempSP: resd 1
     MainSP: resd 1
+    LFSR: resw 0
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
@@ -54,7 +54,6 @@ section .data                   ; we define (global) initialized variables in .d
     printSteps: dd 0                ; how many steps in order to print the game board
     beta: dd 0                      ; field of wiew
     maxDistance: dd 0               ; the maximum distance from the target in order to destroy it
-    seed: dd 0                      ; init for the LFSR
     TmpDronesArrayPointer: dd 1     ; Tmp drones array pointer
     PrinterCo:  dd runPrinter       ; Printer Co struct
                 dd PrinterStack + StackSize
@@ -65,6 +64,11 @@ section .data                   ; we define (global) initialized variables in .d
     DroneCos: dd runDrone           ; Drone Cos struct
               dd DroneStack + StackSize
     DronesArrayPointer: dd runDrone ; Drones array pointer
+    seed: dw 0                      ; init for the LFSR
+    LFSR16bit: dd 0
+    LFSR14bit: dd 0
+    LFSR13bit: dd 0
+    LFSR11bit: dd 0
 section .text
 ; -----------------------------------------------------
 ; Global & Extern Functions
@@ -145,6 +149,7 @@ main:
     call    sscanf
     add     esp, 12
     
+    call    initLFSR
     call    initCoRoutines
     call    startCo
 
@@ -164,6 +169,9 @@ initBoard:
 ; to the taps vars and the seed given.
 ; -----------------------------------------------------
 initLFSR:
+    mov     eax, 0
+    mov     dword eax, [seed]
+    mov     dword [LFSR], eax
     ret
 ; -----------------------------------------------------
 ; Name: initCoRoutines
@@ -171,6 +179,10 @@ initLFSR:
 ; in the board game. 
 ; --------------------------------------mov ebx, [ebp+8]---------------
 initCoRoutines:
+;---------Init Printer Co-Routine------------------
+    call initPrinter
+    ;----------Init Scheduler Co-Routine----------------
+    call initScheduler
     ;----------Init Target Co-Routine----------------
     call initTarget
     ;----------Init Drones Co-Routines----------------
@@ -213,11 +225,7 @@ initCoRoutines:
         mov     dword ecx, runDrone
         mov     dword [ebx], ecx
         mov     dword esp, [TempSP]                     ; esp = return address
-    ;---------Init Printer Co-Routine------------------
-    call initPrinter
-    ;----------Init Scheduler Co-Routine----------------
-    call initScheduler
-    ret
+        ret
 
 ; -----------------------------------------------------
 ; Name: initPrinter
@@ -276,6 +284,8 @@ initPlayers:
 ; Purpose: LFSR main function, calculate a random number.
 ; -----------------------------------------------------
 calculateRandomNumber:
+    ; ---- first getting taps position bits -------
+    mov     dword ebx, [LFSR + 1]
     ret
 ; -----------------------------------------------------
 ; Name: startCo
