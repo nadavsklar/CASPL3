@@ -67,19 +67,20 @@ section .data                   ; we define (global) initialized variables in .d
     DronesArrayPointer: dd runDrone ; Drones array pointer
 section .text
 ; -----------------------------------------------------
-; Global Functions
+; Global & Extern Functions
 ; -----------------------------------------------------
-global main
-extern printf
-extern malloc
-extern runTarget
-extern runDrone
-extern runPrinter
-extern runScheduler
-extern do_Resume
-extern Resume
-global startCo
-global endCo
+    global main
+    extern printf
+    extern sscanf
+    extern malloc
+    extern runTarget
+    extern runDrone
+    extern runPrinter
+    extern runScheduler
+    extern do_Resume
+    extern Resume
+    global startCo
+    global endCo
 ; -----------------------------------------------------
 ; Name: main
 ; Purpose: main function, called from start. 
@@ -88,32 +89,62 @@ global endCo
 ; //TODO: Enter every arg into its var. Using sscanf
 ; -----------------------------------------------------
 main:
-    ; mov ecx, [esp+4] ; argc
-    ; mov edx, [esp+8] ; argv
-    ; top:
-    ; push ecx ; save registers that printf wastes
-    ; push edx
-
-    ; push dword [edx] ; the argument string to display
-    ; push format_string ; the format string
-    ; call printf
-    ; add esp, 8 ; remove the two parameters
-
-    ; pop edx ; restore registers printf used
-    ; pop ecx
-
-    ; add edx, 4 ; point to next argument
-    ; dec ecx ; count down
-    ; jnz top ; if not done counting keep going
-
-    ; mov dword ecx, [numOfDrones]
-    ; push ecx
-    ; push format_int
-    ; call printf
-    ; add esp, 8
-
-    mov     dword [numOfDrones], 3
-    mov     dword [printSteps], 5
+    mov     ecx, [esp + 4] ; argc
+    mov     edx, [esp + 8] ; argv
+    ; ----------- Gettings program args ---------------
+    add     edx, 4
+    ; ----------- Num of drones -----------------------
+    push    edx                         ; sscanf use edx
+    push    dword numOfDrones
+    push    format_int
+    push    dword [edx]
+    call    sscanf
+    add     esp, 12
+    pop     edx                         ; restore
+    add     edx, 4
+    ; ----------- Num of Targets ----------------------
+    push    edx
+    push    dword numberOfNeededTargets
+    push    format_int
+    push    dword [edx]
+    call    sscanf
+    add     esp, 12
+    pop     edx
+    add     edx, 4
+    ; ----------- Print steps ----------------------
+    push    edx
+    push    dword printSteps
+    push    format_int
+    push    dword [edx]
+    call    sscanf
+    add     esp, 12
+    pop     edx
+    add     edx, 4
+    ; ----------- Field of view ----------------------
+    push    edx
+    push    dword beta
+    push    format_int
+    push    dword [edx]
+    call    sscanf
+    add     esp, 12
+    pop     edx
+    add     edx, 4
+    ; ----------- MaxDistance ----------------------
+    push    edx
+    push    dword maxDistance
+    push    format_int
+    push    dword [edx]
+    call    sscanf
+    add     esp, 12
+    pop     edx
+    add     edx, 4
+    ; ----------- Seed ----------------------
+    push    dword seed
+    push    format_int
+    push    dword [edx]
+    call    sscanf
+    add     esp, 12
+    
     call    initCoRoutines
     call    startCo
 
@@ -140,10 +171,6 @@ initLFSR:
 ; in the board game. 
 ; --------------------------------------mov ebx, [ebp+8]---------------
 initCoRoutines:
-    ;---------Init Printer Co-Routine------------------
-    call initPrinter
-    ;----------Init Scheduler Co-Routine----------------
-    call initScheduler
     ;----------Init Target Co-Routine----------------
     call initTarget
     ;----------Init Drones Co-Routines----------------
@@ -186,7 +213,11 @@ initCoRoutines:
         mov     dword ecx, runDrone
         mov     dword [ebx], ecx
         mov     dword esp, [TempSP]                     ; esp = return address
-        ret
+    ;---------Init Printer Co-Routine------------------
+    call initPrinter
+    ;----------Init Scheduler Co-Routine----------------
+    call initScheduler
+    ret
 
 ; -----------------------------------------------------
 ; Name: initPrinter
