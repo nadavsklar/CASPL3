@@ -48,6 +48,7 @@ section .data                   ; we define (global) initialized variables in .d
     global DronesArrayPointer
     global PrinterCo
     global SchedulerCo
+    extern currentSteps
     numOfDrones: dd 0            ; number of drones on the board
     numberOfNeededTargets: dd 0     ; number of targets to win the game
     printSteps: dd 0                ; how many steps in order to print the game board
@@ -112,6 +113,7 @@ main:
     ; add esp, 8
 
     mov     dword [numOfDrones], 3
+    mov     dword [printSteps], 5
     call    initCoRoutines
     call    startCo
 

@@ -22,8 +22,6 @@ section .data           ; we define (global) initialized variables in .data sect
 ; and more.
 ; -----------------------------------------------------
 section .bss			; we define (global) uninitialized variables in .bss section
-    extern MainSP
-    extern TempSP
 section .text
 ; -----------------------------------------------------
 ; Global Functions
@@ -47,7 +45,7 @@ runDrone:
     mov     ebp, esp
     pushad
     ; ----- Just print ---------------------------
-    mov     eax, 10                     ; Try to print. Stack seems to do some problems so we get TempSP here.
+    mov     eax, 10                     ; Try to print.
     push    eax
     push    format_int
     call    printf
@@ -57,7 +55,8 @@ runDrone:
     mov     esp, ebp
     pop     ebp
     mov     dword ebx, SchedulerCo
-    call    Resume 
+    call    Resume
+    jmp runDrone 
 ; -----------------------------------------------------
 ; Name: calculateNewPosition
 ; Purpose: Function that calculate the drone movement 

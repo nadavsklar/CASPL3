@@ -22,6 +22,7 @@ section .data           ; we define (global) initialized variables in .data sect
     extern printSteps
     extern DronesArrayPointer
     extern PrinterCo
+    global currentSteps
     DroneIndex: dd 0
     currentSteps: dd 0
 ; -----------------------------------------------------
@@ -58,7 +59,6 @@ runScheduler:
         mov     dword eax, [DroneIndex]
         mul     dword [Const8]
         add     dword ebx, eax
-        c:
         call    Resume
     StartLoopingRoundRobinDroneCoRoutines:
         inc     dword [DroneIndex]              ; Moving to next Drone
@@ -73,10 +73,10 @@ runScheduler:
         cmp     dword [currentSteps], edi
         je      SwitchingToPrinterCoRoutine
         jmp     SwitchingToDroneCoRotine
-
     SwitchingToPrinterCoRoutine:
         mov     dword ebx, PrinterCo
         call    Resume
+        mov     dword [currentSteps], 0
         jmp SwitchingToDroneCoRotine
     ret
 
