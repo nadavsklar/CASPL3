@@ -4,6 +4,7 @@
 ; Change Log: 21.5.2019 - Adding some documentation
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
+;             31.5.2019 - Fixing runScheduler - according to the algorithm given.
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -22,6 +23,7 @@ section .data           ; we define (global) initialized variables in .data sect
     extern DronesArrayPointer
     extern PrinterCo
     DroneIndex: dd 0
+    currentSteps: dd 0
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
@@ -50,19 +52,7 @@ global do_Resume
 ; according to the algorithm given.
 ; -----------------------------------------------------
 runScheduler:
-    StartLoopingRoundRobinDroneCoRoutines:
-        inc     dword [DroneIndex]
-        mov     dword ecx, [numOfDrones]
-        cmp     dword ecx, [DroneIndex]
-        jge     Nothing
-        mov     dword [DroneIndex], 0
-
-    Nothing:
-        mov     dword edi, [printSteps]
-        cmp     dword [DroneIndex], edi
-        je      SwitchingToPrinterCoRoutine
-        jmp     SwitchingToDroneCoRotine
-
+    ; ------- Switching to the i's drone co routine----
     SwitchingToDroneCoRotine:
         mov     dword ebx, [DronesArrayPointer]
         mov     dword eax, [DroneIndex]
@@ -70,11 +60,24 @@ runScheduler:
         add     dword ebx, eax
         c:
         call    Resume
-        jmp     StartLoopingRoundRobinDroneCoRoutines
+    StartLoopingRoundRobinDroneCoRoutines:
+        inc     dword [DroneIndex]              ; Moving to next Drone
+        inc     dword [currentSteps]            ; Now moving with steps counter
+        mov     dword ecx, [numOfDrones]
+        cmp     dword ecx, [DroneIndex]
+        jne      ContinueToNextDrone
+        ; ---------- returning to first Drone --------
+        mov     dword [DroneIndex], 0
+    ContinueToNextDrone:
+        mov     dword edi, [printSteps]
+        cmp     dword [currentSteps], edi
+        je      SwitchingToPrinterCoRoutine
+        jmp     SwitchingToDroneCoRotine
 
     SwitchingToPrinterCoRoutine:
         mov     dword ebx, PrinterCo
         call    Resume
+        jmp SwitchingToDroneCoRotine
     ret
 
 ; -----------------------------------------------------
@@ -89,12 +92,9 @@ Resume:
     mov     dword [edx + StackOffset], esp  ; save current esp
 do_Resume:
     mov     dword esp, [ebx + StackOffset]
-    e1:
     mov     dword [Curr], ebx               ; Curr points to the struct of the current co-routine
-    e2:
     popad
     popfd
-    e:
     ret     
 
 

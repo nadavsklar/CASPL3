@@ -4,6 +4,7 @@
 ; Change Log: 21.5.2019 - Adding some documentation
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
+;             31.5.2019 - Fixing runDrone stack options before and at the end.
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -22,7 +23,7 @@ section .data           ; we define (global) initialized variables in .data sect
 ; -----------------------------------------------------
 section .bss			; we define (global) uninitialized variables in .bss section
     extern MainSP
-
+    extern TempSP
 section .text
 ; -----------------------------------------------------
 ; Global Functions
@@ -41,15 +42,22 @@ extern do_Resume
 ; to the algorithm given.
 ; -----------------------------------------------------
 runDrone:
-    mov eax, 10
-    push eax
-    push format_int
-    call printf
-    add esp, 8
+    ; ----- Ugly things to clean stack -----------
+    push    ebp
+    mov     ebp, esp
     pushad
+    ; ----- Just print ---------------------------
+    mov     eax, 10                     ; Try to print. Stack seems to do some problems so we get TempSP here.
+    push    eax
+    push    format_int
+    call    printf
+    add     esp, 8
+    ; ------ Return ----------------------
+    popad
+    mov     esp, ebp
+    pop     ebp
     mov     dword ebx, SchedulerCo
     call    Resume 
-    ret
 ; -----------------------------------------------------
 ; Name: calculateNewPosition
 ; Purpose: Function that calculate the drone movement 

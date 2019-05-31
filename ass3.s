@@ -4,6 +4,7 @@
 ; Change Log: 21.5.2019 - Adding some documentation
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
+;             31.5.2019 - Communication working until Printer
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -28,6 +29,7 @@ section	.rodata			        ; we define (global) read-only variables in .rodata se
 section .bss			        ; we define (global) uninitialized variables in .bss section
     global Curr
     global MainSP
+    global TempSP
     LFSR: resw 1                ; register for randon numbers
     StackSize equ 16*1024             ; 16 kb, for stack size
     PrinterStack: resb StackSize          ; stack for each co-routine
@@ -171,11 +173,9 @@ initCoRoutines:
         add     ecx, eax
         mov     dword eax, [ecx + FunctionOffset]       ; eax = DronesArrayPointer[i].func
         mov     dword esp, [ecx + StackOffset]          ; esp = DronesArrayPointer[i].stack
-        a:
         push    eax
         pushfd
         pushad
-        aa:
         mov     dword [ecx + StackOffset], esp          ; saving returning address
         inc     edi
         jmp     StartingLoopInitDrones
@@ -196,7 +196,6 @@ initPrinter:
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
     push    eax                                 ; push return address
-    aprinter:
     pushfd                                      ; push flags
     pushad                                      ; push registers
     mov     [ebx + StackOffset], esp            ; save new SPi value
@@ -212,7 +211,6 @@ initTarget:
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
     push    eax                                 ; push return address
-    atarget:
     pushfd                                      ; push flags
     pushad                                      ; push registers
     mov     [ebx + StackOffset], esp            ; save new SPi value
@@ -227,7 +225,6 @@ initScheduler:
     mov     dword eax, [ebx + FunctionOffset]   ; get initial EIP value - pointer to CO function
     mov     dword [TempSP], esp                 ; save esp value
     mov     esp, [ebx + StackOffset]            ; get initial ESP value – pointer to COi stack
-    ascheduler:
     push    eax                                 ; push return address
     pushfd                                      ; push flags
     pushad                                      ; push registers
