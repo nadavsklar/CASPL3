@@ -22,6 +22,7 @@ section	.rodata			        ; we define (global) read-only variables in .rodata se
     FunctionOffset equ 0                 ; offset of pointer to co-routine function in co-routine struct 
     StackOffset equ 4                   ; offset of pointer to co-routine stack in co-routine struct
     Const8: dd 8
+    Const12: dd 12
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
@@ -49,6 +50,11 @@ section .data                   ; we define (global) initialized variables in .d
     global PrinterCo
     global SchedulerCo
     extern currentSteps
+    playerIndex: dd 0
+    X: dd 0.0
+    Y: dd 0.0
+    alpha: dd 0.0
+    playersArray: dd 0              ; players Array -- each player - according to drone - have x,y,alpha
     seed: dw 0                      ; init for the LFSR
     LFSR16bit: dd 0
     LFSR14bit: dd 0
@@ -99,58 +105,61 @@ main:
     ; ----------- Gettings program args ---------------
     add     edx, 4
     ; ----------- Num of drones -----------------------
-    push    edx                         ; sscanf use edx
+    pushad                         ; sscanf use edx
     push    dword numOfDrones
     push    format_int
     push    dword [edx]
     call    sscanf
     add     esp, 12
-    pop     edx                         ; restore
+    popad                         ; restore
     add     edx, 4
     ; ----------- Num of Targets ----------------------
-    push    edx
+    pushad
     push    dword numberOfNeededTargets
     push    format_int
     push    dword [edx]
     call    sscanf
     add     esp, 12
-    pop     edx
+    popad
     add     edx, 4
     ; ----------- Print steps ----------------------
-    push    edx
+    pushad
     push    dword printSteps
     push    format_int
     push    dword [edx]
     call    sscanf
     add     esp, 12
-    pop     edx
+    popad
     add     edx, 4
     ; ----------- Field of view ----------------------
-    push    edx
+    pushad
     push    dword beta
     push    format_int
     push    dword [edx]
     call    sscanf
     add     esp, 12
-    pop     edx
+    popad
     add     edx, 4
     ; ----------- MaxDistance ----------------------
-    push    edx
+    pushad
     push    dword maxDistance
     push    format_int
     push    dword [edx]
     call    sscanf
     add     esp, 12
-    pop     edx
+    popad
     add     edx, 4
     ; ----------- Seed ----------------------
+    pushad
     push    dword LFSR
     push    format_int
     push    dword [edx]
     call    sscanf
     add     esp, 12
-
+    popad
+    
     call    initCoRoutines
+    call    initPlayers
     call    startCo
 
     mov    ebx,eax
@@ -270,8 +279,61 @@ initScheduler:
 ; Name: initPlayers
 ; Purpose: Function that init the drones in the game
 ; according to the numOfDrones given at argv.
+; TODO: alpha dosent working for some reason
 ; -----------------------------------------------------
 initPlayers:
+    mov     dword eax, [numOfDrones]
+    mul     dword [Const12]
+    push    eax
+    call    malloc
+    add     esp, 4
+    mov     dword [playersArray], eax           ; playersArray = malloc(numOfDrones * 12)
+    mov     dword [playerIndex], 0
+    playersLoop:
+        mov     dword ecx, [numOfDrones]
+        cmp     dword ecx, [playerIndex]
+        je      endPlayersLoop
+        pushad
+        ; -------------- X ------------------------
+        call    calculateRandomNumber           ; random number for x
+        fild    dword [randomNum]               ; push random number as float
+        mov     dword [randomNum], 100          ; scale - moving 100
+        fimul   dword [randomNum]              ; random * 100
+        mov     dword [randomNum], 65535
+        fidiv   dword [randomNum]              ; random * 100 / 65535
+        fstp    dword [X]
+        ; -------------- Y ------------------------
+        call    calculateRandomNumber           ; random number for y
+        fild    dword [randomNum]               ; push random number as float
+        mov     dword [randomNum], 100          ; scale - moving 100
+        fimul   dword [randomNum]              ; random * 100
+        mov     dword [randomNum], 65535
+        fidiv   dword [randomNum]              ; random * 100 / 65535
+        fstp    dword [Y]
+        ; ------------- alpha ---------------------
+        call    calculateRandomNumber           ; random number for x
+        fild    dword [randomNum]               ; push random number as float
+        mov     dword [randomNum], 360          ; scale - moving 100
+        fimul   dword [randomNum]              ; random * 360
+        mov     dword [randomNum], 65535
+        fidiv   dword [randomNum]              ; random * 360 / 65535
+        fistp    dword [alpha]                  ; Notice: Not in radians
+        popad
+        ; ----------- moving data to players -------------
+        mov     dword eax, [Const12]
+        mul     dword [playerIndex]                             ; eax = 12 * index
+        mov     dword ecx, [playersArray]
+        add     ecx, eax                        ; ecx = players[index]
+        mov     dword ebx, [X]
+        mov     dword [ecx], ebx
+        mov     dword ebx, [Y]
+        mov     dword [ecx + 4], ebx
+        mov     dword ebx, [alpha]
+        mov     dword [ecx + 8], ebx
+        ; ----------- next player -------------
+        inc     dword [playerIndex]
+        jmp     playersLoop
+    endPlayersLoop:
     ret
 ; -----------------------------------------------------
 ; Name: calculateRandomNumber
