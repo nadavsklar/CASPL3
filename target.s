@@ -13,6 +13,8 @@ section	.rodata			; we define (global) read-only variables in .rodata section
 ; Global initialized vars.
 ; -----------------------------------------------------
 section .data           ; we define (global) initialized variables in .data section
+    global canDestroy
+    canDestroy: dd 0
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
@@ -22,8 +24,10 @@ section .text
 ; -----------------------------------------------------
 ; Global Functions
 ; -----------------------------------------------------
+global mayDestroy
 global runTarget
 global getTargetLocation
+global destoryTarget
 ; -----------------------------------------------------
 ; Name: runTarget
 ; Purpose: Main target function, works according to the 
@@ -36,6 +40,12 @@ runTarget:
 ; Purpose: Function that returns the current target location.
 ; -----------------------------------------------------
 getTargetLocation:
+    ret
+; -----------------------------------------------------
+; Name: destoryTarget
+; Purpose: Function that destroy a target.
+; -----------------------------------------------------
+destoryTarget:
     ret
 ; -----------------------------------------------------
 ; Name: createTarget

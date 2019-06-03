@@ -16,6 +16,7 @@ section	.rodata			        ; we define (global) read-only variables in .rodata se
     global Const8
     global format_int
     global format_string
+    global Const16
     StackSizeDrone: dd 16384
     taps: dd 11, 13, 14, 16     ; Unique taps for LFSR
     format_int: db "%d", 10, 0  ; format int printf
@@ -46,10 +47,13 @@ section .bss			        ; we define (global) uninitialized variables in .bss sect
 ; -----------------------------------------------------
 section .data                   ; we define (global) initialized variables in .data section
     global numOfDrones
+    global numberOfNeededTargets
     global printSteps
     global DronesArrayPointer
+    global playersArray
     global PrinterCo
     global SchedulerCo
+    global randomNum
     extern currentSteps
     playerIndex: dd 0
     X: dd 0.0
@@ -93,6 +97,7 @@ section .text
     extern Resume
     global startCo
     global endCo
+    global calculateRandomNumber
 ; -----------------------------------------------------
 ; Name: main
 ; Purpose: main function, called from start. 
@@ -308,30 +313,30 @@ initPlayers:
         call    calculateRandomNumber           ; random number for x
         fild    dword [randomNum]               ; push random number as float
         mov     dword [randomNum], 100          ; scale - moving 100
-        fimul   dword [randomNum]              ; random * 100
+        fimul   dword [randomNum]               ; random * 100
         mov     dword [randomNum], 65535
-        fidiv   dword [randomNum]              ; random * 100 / 65535
+        fidiv   dword [randomNum]               ; random * 100 / 65535
         fstp    dword [X]
         ; -------------- Y ------------------------
         call    calculateRandomNumber           ; random number for y
         fild    dword [randomNum]               ; push random number as float
         mov     dword [randomNum], 100          ; scale - moving 100
-        fimul   dword [randomNum]              ; random * 100
+        fimul   dword [randomNum]               ; random * 100
         mov     dword [randomNum], 65535
-        fidiv   dword [randomNum]              ; random * 100 / 65535
+        fidiv   dword [randomNum]               ; random * 100 / 65535
         fstp    dword [Y]
         ; ------------- alpha ---------------------
         call    calculateRandomNumber           ; random number for x
         fild    dword [randomNum]               ; push random number as float
         mov     dword [randomNum], 360          ; scale - moving 100
-        fimul   dword [randomNum]              ; random * 360
+        fimul   dword [randomNum]               ; random * 360
         mov     dword [randomNum], 65535
-        fidiv   dword [randomNum]              ; random * 360 / 65535
-        fldpi                                  ; mov to radian
+        fidiv   dword [randomNum]               ; random * 360 / 65535
+        fldpi                                   ; mov to radian
         fmul
         mov     dword [randomNum], 180          
         fidiv   dword [randomNum]
-        fstp    dword [alpha]                  ; Notice: in radians
+        fstp    dword [alpha]                   ; Notice: in radians
         popad
         ; ----------- moving data to players -------------
         mov     dword eax, [Const16]
@@ -422,3 +427,4 @@ startCo:
 endCo:
     mov     dword esp, [MainSP]
     popad
+    ret
