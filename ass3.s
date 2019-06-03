@@ -5,6 +5,7 @@
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
 ;             31.5.2019 - Communication working until Printer
+;             3.6.2019 - Comminication working with drones > 3
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -194,7 +195,7 @@ initCoRoutines:
     mov     dword [DronesArrayPointer], eax             ; DronesArrayPointer = malloc(numOfDrones * 8)
     mov     edi, 0
     StartingLoopInitDrones:
-        cmp     dword edi, [numOfDrones]            ; Checking if every drone is initiated
+        cmp     dword edi, [numOfDrones]                ; Checking if every drone is initiated
         je      EndingLoopInitDrones            
         mov     eax, edi                                ; Doing some stupid stuff for mul 8
         mov     dword edx, [Const8]             
@@ -208,18 +209,14 @@ initCoRoutines:
         add     esp, 4
         add     dword ebx, StackOffset
         mov     dword [ebx], eax                        ; DronesArrayPointer[i].stack = malloc(StackSize)
-        mov     eax, edi
-        mov     dword edx, [Const8]
-        mul     edx
-        mov     dword ecx, [DronesArrayPointer]
-        add     ecx, eax
-        mov     dword eax, [ecx + FunctionOffset]       ; eax = DronesArrayPointer[i].func
+        sub     ebx, 4
+        mov     dword eax, [ebx + FunctionOffset]       ; eax = DronesArrayPointer[i].func
         mov     dword [TempSP], esp
-        mov     dword esp, [ecx + StackOffset]          ; esp = DronesArrayPointer[i].stack
+        mov     dword esp, [ebx + StackOffset]          ; esp = DronesArrayPointer[i].stack
         push    eax
         pushfd
         pushad
-        mov     dword [ecx + StackOffset], esp          ; saving returning address
+        mov     dword [ebx + StackOffset], esp          ; saving returning address
         mov     dword esp, [TempSP]
         inc     edi
         jmp     StartingLoopInitDrones
@@ -227,6 +224,19 @@ initCoRoutines:
         mov     dword ebx, [DronesArrayPointer]
         mov     dword ecx, runDrone
         mov     dword [ebx], ecx
+        push    dword [StackSizeDrone]
+        call    malloc
+        add     esp, 4
+        add     dword ebx, StackOffset
+        mov     dword [ebx], eax                        ; DronesArrayPointer[i].stack = malloc(StackSize)
+        sub     ebx, 4
+        mov     dword eax, [ebx + FunctionOffset]       ; eax = DronesArrayPointer[i].func
+        mov     dword [TempSP], esp
+        mov     dword esp, [ebx + StackOffset]          ; esp = DronesArrayPointer[i].stack
+        push    eax
+        pushfd
+        pushad
+        mov     dword [ebx + StackOffset], esp          ; saving returning address
         mov     dword esp, [TempSP]                     ; esp = return address
         ret
 

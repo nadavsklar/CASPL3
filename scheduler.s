@@ -23,6 +23,7 @@ section .data           ; we define (global) initialized variables in .data sect
     extern DronesArrayPointer
     extern PrinterCo
     global currentSteps
+    global DroneIndex
     DroneIndex: dd 0
     currentSteps: dd 0
 ; -----------------------------------------------------
@@ -53,19 +54,20 @@ global do_Resume
 ; according to the algorithm given.
 ; -----------------------------------------------------
 runScheduler:
-    ; ------- Switching to the i's drone co routine----
+    ; ------- Switching to the i's drone co routine ----
     SwitchingToDroneCoRotine:
         mov     dword ebx, [DronesArrayPointer]
         mov     dword eax, [DroneIndex]
         mul     dword [Const8]
         add     dword ebx, eax
+        c:
         call    Resume
     StartLoopingRoundRobinDroneCoRoutines:
         inc     dword [DroneIndex]              ; Moving to next Drone
         inc     dword [currentSteps]            ; Now moving with steps counter
         mov     dword ecx, [numOfDrones]
         cmp     dword ecx, [DroneIndex]
-        jne      ContinueToNextDrone
+        jne     ContinueToNextDrone
         ; ---------- returning to first Drone --------
         mov     dword [DroneIndex], 0
     ContinueToNextDrone:
@@ -77,7 +79,7 @@ runScheduler:
         mov     dword ebx, PrinterCo
         call    Resume
         mov     dword [currentSteps], 0
-        jmp SwitchingToDroneCoRotine
+        jmp     SwitchingToDroneCoRotine
     ret
 
 ; -----------------------------------------------------
@@ -95,4 +97,5 @@ do_Resume:
     mov     dword [Curr], ebx               ; Curr points to the struct of the current co-routine
     popad
     popfd
+    e:
     ret     

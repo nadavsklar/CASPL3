@@ -12,11 +12,14 @@
 section	.rodata			; we define (global) read-only variables in .rodata section
 extern format_int
 extern format_string
+message: dw "Drone"
+format_string_noline: db "%s", 0
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
 section .data           ; we define (global) initialized variables in .data section
     extern SchedulerCo
+    extern DroneIndex
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
@@ -45,8 +48,11 @@ runDrone:
     mov     ebp, esp
     pushad
     ; ----- Just print ---------------------------
-    mov     eax, 10                     ; Try to print.
-    push    eax
+    push    dword message
+    push    format_string_noline
+    call    printf
+    add     esp, 8
+    push    dword [DroneIndex]
     push    format_int
     call    printf
     add     esp, 8
@@ -56,7 +62,7 @@ runDrone:
     pop     ebp
     mov     dword ebx, SchedulerCo
     call    Resume
-    jmp runDrone 
+    jmp     runDrone 
 ; -----------------------------------------------------
 ; Name: calculateNewPosition
 ; Purpose: Function that calculate the drone movement 
