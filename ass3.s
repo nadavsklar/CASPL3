@@ -23,7 +23,7 @@ section	.rodata			        ; we define (global) read-only variables in .rodata se
     FunctionOffset equ 0                 ; offset of pointer to co-routine function in co-routine struct 
     StackOffset equ 4                   ; offset of pointer to co-routine stack in co-routine struct
     Const8: dd 8
-    Const12: dd 12
+    Const16: dd 16
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
@@ -55,7 +55,7 @@ section .data                   ; we define (global) initialized variables in .d
     X: dd 0.0
     Y: dd 0.0
     alpha: dd 0.0
-    playersArray: dd 0              ; players Array -- each player - according to drone - have x,y,alpha
+    beta: dd 0                      ; field of wiew
     seed: dw 0                      ; init for the LFSR
     LFSR16bit: dd 0
     LFSR14bit: dd 0
@@ -65,7 +65,6 @@ section .data                   ; we define (global) initialized variables in .d
     numOfDrones: dd 0            ; number of drones on the board
     numberOfNeededTargets: dd 0     ; number of targets to win the game
     printSteps: dd 0                ; how many steps in order to print the game board
-    beta: dd 0                      ; field of wiew
     maxDistance: dd 0               ; the maximum distance from the target in order to destroy it
     TmpDronesArrayPointer: dd 1     ; Tmp drones array pointer
     PrinterCo:  dd runPrinter       ; Printer Co struct
@@ -75,7 +74,8 @@ section .data                   ; we define (global) initialized variables in .d
     TargetCo: dd runTarget          ; Target Co struct
               dd TargetStack + StackSize
     DroneCos: dd runDrone           ; Drone Cos struct
-              dd DroneStack + StackSize
+              dd DroneStack + StackSize             
+    playersArray: dd 0              ; players Array -- each player - according to drone - have x,y,alpha
     DronesArrayPointer: dd runDrone ; Drones array pointer
 section .text
 ; -----------------------------------------------------
@@ -293,7 +293,7 @@ initScheduler:
 ; -----------------------------------------------------
 initPlayers:
     mov     dword eax, [numOfDrones]
-    mul     dword [Const12]
+    mul     dword [Const16]
     push    eax
     call    malloc
     add     esp, 4
@@ -327,19 +327,24 @@ initPlayers:
         fimul   dword [randomNum]              ; random * 360
         mov     dword [randomNum], 65535
         fidiv   dword [randomNum]              ; random * 360 / 65535
-        fistp    dword [alpha]                  ; Notice: Not in radians
+        fldpi                                  ; mov to radian
+        fmul
+        mov     dword [randomNum], 180          
+        fidiv   dword [randomNum]
+        fstp    dword [alpha]                  ; Notice: in radians
         popad
         ; ----------- moving data to players -------------
-        mov     dword eax, [Const12]
+        mov     dword eax, [Const16]
         mul     dword [playerIndex]                             ; eax = 12 * index
         mov     dword ecx, [playersArray]
-        add     ecx, eax                        ; ecx = players[index]
+        add     ecx, eax                                        ; ecx = players[index]
         mov     dword ebx, [X]
         mov     dword [ecx], ebx
         mov     dword ebx, [Y]
         mov     dword [ecx + 4], ebx
         mov     dword ebx, [alpha]
         mov     dword [ecx + 8], ebx
+        mov     dword [ecx + 12], 0
         ; ----------- next player -------------
         inc     dword [playerIndex]
         jmp     playersLoop
