@@ -168,12 +168,10 @@ runDrone:
     mov     dword ecx, [ebx + 12]
     cmp     dword ecx, [numberOfNeededTargets]
     jne     DontDestroy
-    beforeWin:
     push    dword [DroneIndex]
     push    format_win
     call    printf
     add     esp, 8
-    x:
     call    endCo
     ; --------------------------- Return ---------------------
     DontDestroy:
