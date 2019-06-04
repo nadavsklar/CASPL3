@@ -15,7 +15,7 @@ extern format_string
 extern Const16
 message: dw "Drone"
 format_string_noline: db "%s", 0
-format_win: db "Drone id <%d>: I am a winner"
+format_win: db "Drone id %d: I am a winner", 10, 0
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
@@ -168,10 +168,12 @@ runDrone:
     mov     dword ecx, [ebx + 12]
     cmp     dword ecx, [numberOfNeededTargets]
     jne     DontDestroy
+    beforeWin:
     push    dword [DroneIndex]
     push    format_win
     call    printf
     add     esp, 8
+    x:
     call    endCo
     ; --------------------------- Return ---------------------
     DontDestroy:
