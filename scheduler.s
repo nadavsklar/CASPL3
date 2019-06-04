@@ -60,7 +60,6 @@ runScheduler:
         mov     dword eax, [DroneIndex]
         mul     dword [Const8]
         add     dword ebx, eax
-        c:
         call    Resume
     StartLoopingRoundRobinDroneCoRoutines:
         inc     dword [DroneIndex]              ; Moving to next Drone
@@ -97,5 +96,4 @@ do_Resume:
     mov     dword [Curr], ebx               ; Curr points to the struct of the current co-routine
     popad
     popfd
-    e:
     ret     

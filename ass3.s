@@ -10,18 +10,18 @@
 ; -----------------------------------------------------
 ; Global read only vars
 ; -----------------------------------------------------
-section	.rodata			        ; we define (global) read-only variables in .rodata section
+section	.rodata			                ; we define (global) read-only variables in .rodata section
     global StackOffset
     global FunctionOffset
     global Const8
+    global Const16
     global format_int
     global format_string
-    global Const16
     StackSizeDrone: dd 16384
-    taps: dd 11, 13, 14, 16     ; Unique taps for LFSR
-    format_int: db "%d", 10, 0  ; format int printf
-    format_string: db "%s", 10, 0   ; format string printf
-    FunctionOffset equ 0                 ; offset of pointer to co-routine function in co-routine struct 
+    taps: dd 11, 13, 14, 16             ; Unique taps for LFSR
+    format_int: db "%d", 10, 0          ; format int printf
+    format_string: db "%s", 10, 0       ; format string printf
+    FunctionOffset equ 0                ; offset of pointer to co-routine function in co-routine struct 
     StackOffset equ 4                   ; offset of pointer to co-routine stack in co-routine struct
     Const8: dd 8
     Const16: dd 16
@@ -29,12 +29,12 @@ section	.rodata			        ; we define (global) read-only variables in .rodata se
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
 ; -----------------------------------------------------
-section .bss			        ; we define (global) uninitialized variables in .bss section
+section .bss			                    ; we define (global) uninitialized variables in .bss section
     global Curr
     global MainSP
     global TempSP
-    StackSize equ 16*1024             ; 16 kb, for stack size
-    PrinterStack: resb StackSize          ; stack for each co-routine
+    StackSize equ 16*1024                   ; 16 kb, for stack size
+    PrinterStack: resb StackSize            ; stack for each co-routine
     TargetStack: resb StackSize
     SchedulerStack: resb StackSize
     DroneStack: resb StackSize
@@ -45,42 +45,48 @@ section .bss			        ; we define (global) uninitialized variables in .bss sect
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
-section .data                   ; we define (global) initialized variables in .data section
+section .data                           ; we define (global) initialized variables in .data section
     global numOfDrones
     global numberOfNeededTargets
     global printSteps
+    global beta
+    global maxDistance
     global DronesArrayPointer
     global playersArray
+    global targetPosition
     global PrinterCo
     global SchedulerCo
     global randomNum
     extern currentSteps
     playerIndex: dd 0
     X: dd 0.0
+    X2: dd 0.0
     Y: dd 0.0
+    Y2: dd 0.0
     alpha: dd 0.0
-    beta: dd 0                      ; field of wiew
-    seed: dw 0                      ; init for the LFSR
+    seed: dw 0                          ; init for the LFSR
     LFSR16bit: dd 0
     LFSR14bit: dd 0
     LFSR13bit: dd 0
     LFSR11bit: dd 0
     randomNum: dd 0
-    numOfDrones: dd 0            ; number of drones on the board
-    numberOfNeededTargets: dd 0     ; number of targets to win the game
-    printSteps: dd 0                ; how many steps in order to print the game board
-    maxDistance: dd 0               ; the maximum distance from the target in order to destroy it
-    TmpDronesArrayPointer: dd 1     ; Tmp drones array pointer
-    PrinterCo:  dd runPrinter       ; Printer Co struct
+    numOfDrones: dd 0                   ; number of drones on the board
+    numberOfNeededTargets: dd 0         ; number of targets to win the game
+    printSteps: dd 0                    ; how many steps in order to print the game board
+    beta: dd 0                          ; field of wiew
+    maxDistance: dd 0                   ; the maximum distance from the target in order to destroy it
+    TmpDronesArrayPointer: dd 1         ; Tmp drones array pointer
+    PrinterCo:  dd runPrinter           ; Printer Co struct
                 dd PrinterStack + StackSize
-    SchedulerCo: dd runScheduler    ; Scheculer Co struct
+    SchedulerCo: dd runScheduler        ; Scheculer Co struct
                  dd SchedulerStack + StackSize
-    TargetCo: dd runTarget          ; Target Co struct
+    TargetCo: dd runTarget              ; Target Co struct
               dd TargetStack + StackSize
-    DroneCos: dd runDrone           ; Drone Cos struct
+    DroneCos: dd runDrone               ; Drone Cos struct
               dd DroneStack + StackSize             
-    playersArray: dd 0              ; players Array -- each player - according to drone - have x,y,alpha
-    DronesArrayPointer: dd runDrone ; Drones array pointer
+    playersArray: dd 0                  ; players Array -- each player - according to drone - have x,y,alpha
+    DronesArrayPointer: dd runDrone     ; Drones array pointer
+    targetPosition: dd 0                ; points to the position of the target
 section .text
 ; -----------------------------------------------------
 ; Global & Extern Functions
@@ -165,6 +171,7 @@ main:
     popad
     
     call    initCoRoutines
+    call    initBoard
     call    initPlayers
     call    startCo
 
@@ -172,12 +179,7 @@ main:
     mov    eax,1
     int    0x80
     nop
-; -----------------------------------------------------
-; Name: initBoard
-; Purpose: Function that init the board size and array.
-; -----------------------------------------------------
-initBoard:
-    ret
+
 ; -----------------------------------------------------
 ; Name: initCoRoutines
 ; Purpose: Function that init the Threads (Co-Routines)
@@ -291,6 +293,40 @@ initScheduler:
     mov     dword esp, [TempSP]                 ; restore esp value
     ret
 ; -----------------------------------------------------
+; Name: initBoard
+; Purpose: Function that init the board size and array.
+; -----------------------------------------------------
+initBoard:
+    mov     dword eax, [Const8]
+    push    eax
+    call    malloc
+    add     esp, 4
+    mov     dword [targetPosition], eax     ; targetPosition = malloc(8)
+    mov     dword ebx, [targetPosition]
+    ;---------------- Calculating Target X -----------------
+    call    calculateRandomNumber
+    fild    dword [randomNum]               ; push random number as float
+    mov     dword [randomNum], 100          ; scale - moving 100
+    fimul   dword [randomNum]               ; random * 100
+    mov     dword [randomNum], 65535
+    fidiv   dword [randomNum]               ; random * 100 / 65535
+    fstp    dword [X2]
+    ;---------------- Calculating Target Y -----------------
+    call    calculateRandomNumber
+    fild    dword [randomNum]               ; push random number as float
+    mov     dword [randomNum], 100          ; scale - moving 100
+    fimul   dword [randomNum]               ; random * 100
+    mov     dword [randomNum], 65535
+    fidiv   dword [randomNum]               ; random * 100 / 65535
+    fstp    dword [Y2]
+    ;---------------- Loading into memory --------------------
+    mov     dword ecx, [X2]
+    mov     dword [ebx + 0], ecx
+    mov     dword ecx, [Y2]
+    mov     dword [ebx + 4], ecx
+    debug:
+    ret
+; -----------------------------------------------------
 ; Name: initPlayers
 ; Purpose: Function that init the drones in the game
 ; according to the numOfDrones given at argv.
@@ -350,6 +386,7 @@ initPlayers:
         mov     dword ebx, [alpha]
         mov     dword [ecx + 8], ebx
         mov     dword [ecx + 12], 0
+        debug2:
         ; ----------- next player -------------
         inc     dword [playerIndex]
         jmp     playersLoop

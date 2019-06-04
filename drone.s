@@ -98,7 +98,7 @@ runDrone:
     mov     dword eax, [DroneIndex]
     mul     dword [Const16]
     add     ebx, eax                        ; ebx = playersArray[DroneIndex]
-    mov     eax, [ebx + 8]                  ; eax = playersArray[DroneIndex].alpha
+    mov     dword eax, [ebx + 8]            ; eax = playersArray[DroneIndex].alpha
     mov     dword [tempAlpha], eax
     fld     dword [tempAlpha]               ; push playersArray[DroneIndex].alpha
     fld     dword [deltaAlpha]              ; push deltaAlpha
