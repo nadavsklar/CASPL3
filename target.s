@@ -148,12 +148,10 @@ mayDestroy:
     fsub
     fabs
     d:
-    fld     dword [beta]
+    fild    dword [beta]
     e:
-    fsub
-    f:
-    ftst    
-    jl      Cond1IsTrue
+    fcomp   
+    jg      Cond1IsTrue
     Cond1IsFalse:
     mov     dword [cond1], 0
     jmp     CheckSecondCondition
@@ -170,19 +168,18 @@ mayDestroy:
     fmul
     fadd
     fsqrt
-    hh:
-    fld     dword [maxDistance]
-    ii:
-    fsub
-    jj:
-    ftst
-    jl      Cond2IsTrue
+    aa:
+    fild    dword [maxDistance]
+    bb:
+    fcomp
+    jg      Cond2IsTrue
     Cond2IsFalse:
     mov     dword [cond2], 0
     jmp     EndChecking
     Cond2IsTrue:
     mov     dword [cond2], 1
     EndChecking:
+    fstp    dword [garbage]
     mov     dword eax, [cond1]
     mov     dword ecx, [cond2]
     mul     ecx
