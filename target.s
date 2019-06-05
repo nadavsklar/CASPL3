@@ -130,28 +130,23 @@ mayDestroy:
     fsub
     fstp    dword [deltaY]                  ; deltaY = targetY - droneY
     ; ------------- Calculating Gamma ------------------
-    call    calculateRandomNumber           ; random number for x
-    fild    dword [randomNum]               ; push random number as float
-    mov     dword [randomNum], 360          ; scale - moving 100
-    fimul   dword [randomNum]               ; random * 360
-    mov     dword [randomNum], 65535
-    fidiv   dword [randomNum]               ; random * 360 / 65535
-    fldpi                                   ; mov to radian
-    fmul
-    mov     dword [randomNum], 180          
-    fidiv   dword [randomNum]
-    fstp    dword [Gamma]                   ; Notice: in radians
+    aa:
+    fld     dword [deltaY]
+    fld     dword [deltaX]
+    bbb:
+    fpatan  
+    ccc:
+    fstp    dword [Gamma]
+    cc:
     ; ------------- Check first condition ---------------------
     CheckFirstCondition:
     fld     dword [droneAlpha]
     fld     dword [Gamma]
     fsub
     fabs
-    d:
     fild    dword [beta]
-    e:
-    fcomp   
-    jg      Cond1IsTrue
+    fcomip   
+    ja      Cond1IsTrue
     Cond1IsFalse:
     mov     dword [cond1], 0
     jmp     CheckSecondCondition
@@ -168,11 +163,9 @@ mayDestroy:
     fmul
     fadd
     fsqrt
-    aa:
     fild    dword [maxDistance]
-    bb:
-    fcomp
-    jg      Cond2IsTrue
+    fcomip
+    ja      Cond2IsTrue
     Cond2IsFalse:
     mov     dword [cond2], 0
     jmp     EndChecking

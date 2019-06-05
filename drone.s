@@ -106,15 +106,26 @@ runDrone:
     fldpi
     mov     dword [randomNum], 2
     fimul   dword [randomNum]
-    fcomp
-    jg      NotScalingAlpha
+    fcomip 
+    ja      NotSubbingAlpha
     fldpi
     mov     dword [randomNum], 2
     fimul   dword [randomNum]
     fsub
-    mov     dword [randomNum], -1
+    fabs
+    jmp     NotAddingAlpha
+    NotSubbingAlpha:
+    mov     dword [randomNum], 0
+    aaaa:
+    fild    dword [randomNum]
+    fcomip    
+    jb      NotAddingAlpha
+    bbbb:
+    fldpi
+    mov     dword [randomNum], 2
     fimul   dword [randomNum]
-    NotScalingAlpha:
+    fadd
+    NotAddingAlpha:
     fstp    dword [ebx + 8]
     ; --------------------------- Calculating new X -------------------------
     mov     dword eax, [ebx + 0]            ; eax = playersArray[DroneIndex].x
@@ -126,15 +137,23 @@ runDrone:
     fld     dword [tempX]                   ; push x
     fadd                                    ; x + deltaDistance * cos(alpha)
     mov     dword [randomNum], 100
-    fld     dword [randomNum]
-    fcomp  
-    jg      NotScalingX
+    fild    dword [randomNum]
+    fcomip  
+    ja      NotSubbingX
     mov     dword [randomNum], 100
-    fld     dword [randomNum]
+    fild    dword [randomNum]
     fsub
-    mov     dword [randomNum], -1
-    fimul   dword [randomNum]
-    NotScalingX:
+    fabs
+    jmp     NotAddingX
+    NotSubbingX:
+    mov     dword [randomNum], 0
+    fild    dword [randomNum]
+    fcomip
+    jb      NotAddingX
+    mov     dword [randomNum], 100
+    fild    dword [randomNum]
+    fadd
+    NotAddingX:
     fstp    dword [ebx + 0]
     ; --------------------------- Calculating new Y -------------------------
     mov     dword eax, [ebx + 4]            ; eax = playersArray[DroneIndex].y
@@ -146,15 +165,23 @@ runDrone:
     fld     dword [tempY]                   ; push y
     fadd                                    ; y + deltaDistance * sin(alpha)
     mov     dword [randomNum], 100
-    fld     dword [randomNum]
-    fcomp  
-    jg      NotScalingY
+    fild    dword [randomNum]
+    fcomip   
+    ja      NotSubbingY
     mov     dword [randomNum], 100
-    fld     dword [randomNum]
+    fild     dword [randomNum]
     fsub
-    mov     dword [randomNum], -1
-    fimul   dword [randomNum]
-    NotScalingY:
+    fabs
+    jmp     NotAddingY
+    NotSubbingY:
+    mov     dword [randomNum], 0
+    fild    dword [randomNum]
+    fcomip
+    jb      NotAddingY
+    mov     dword [randomNum], 100
+    fild    dword [randomNum]
+    fadd
+    NotAddingY:
     fstp    dword [ebx + 4]
     ; -------------------------- Destroying the target ----------------------
     mov     dword [tempDrone], ebx
