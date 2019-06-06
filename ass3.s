@@ -6,6 +6,7 @@
 ;                           Co routines stuff. 
 ;             31.5.2019 - Communication working until Printer
 ;             3.6.2019 - Comminication working with drones > 3
+;             5.6.2019 - Target Co routine
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -56,6 +57,7 @@ section .data                           ; we define (global) initialized variabl
     global targetPosition
     global PrinterCo
     global SchedulerCo
+    global TargetCo
     global randomNum
     extern currentSteps
     playerIndex: dd 0
@@ -175,7 +177,7 @@ main:
     call    initPlayers
     call    startCo
 
-    mov    ebx,eax
+    mov    ebx,0
     mov    eax,1
     int    0x80
     nop

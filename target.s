@@ -4,6 +4,7 @@
 ; Change Log: 21.5.2019 - Adding some documentation.
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
+;             5.6.2019 - Target Co routine
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -19,6 +20,7 @@ section .data           ; we define (global) initialized variables in .data sect
     extern targetPosition
     extern DroneIndex
     extern beta
+    extern SchedulerCo
     extern maxDistance
     extern randomNum
     canDestroy: dd 0
@@ -47,25 +49,25 @@ global runTarget
 global getTargetLocation
 global destoryTarget
 extern calculateRandomNumber
+extern Resume
 ; -----------------------------------------------------
 ; Name: runTarget
 ; Purpose: Main target function, works according to the 
 ; algorithm given.
 ; -----------------------------------------------------
 runTarget:
-    ret
-; -----------------------------------------------------
-; Name: getTargetLocation
-; Purpose: Function that returns the current target location.
-; -----------------------------------------------------
-getTargetLocation:
-    ret
-; -----------------------------------------------------
-; Name: destoryTarget
-; Purpose: Function that destroy a target.
-; -----------------------------------------------------
-destoryTarget:
-    ret
+    ; ----- Ugly things to clean stack -----------
+    push    ebp
+    mov     ebp, esp
+    pushad
+    call createTarget
+    ; ------ Return ----------------------
+    popad
+    mov     esp, ebp
+    pop     ebp
+    mov     dword ebx, SchedulerCo
+    call    Resume 
+    jmp     runTarget
 ; -----------------------------------------------------
 ; Name: createTarget
 ; Purpose: Creates new target on the game borad.
@@ -93,6 +95,7 @@ createTarget:
     fidiv   dword [randomNum]               ; random * 100 / 65535
     fstp    dword [targetY]
     ;---------------- Loading into memory --------------------
+    mov     dword ebx, [targetPosition]
     mov     dword ecx, [targetX]
     mov     dword [ebx + 0], ecx
     mov     dword ecx, [targetY]
@@ -130,14 +133,13 @@ mayDestroy:
     fsub
     fstp    dword [deltaY]                  ; deltaY = targetY - droneY
     ; ------------- Calculating Gamma ------------------
-    aa:
+    mov     dword [garbage], 1
+    fild    dword [garbage]
     fld     dword [deltaY]
-    fld     dword [deltaX]
-    bbb:
-    fpatan  
-    ccc:
+    fld     dword [deltaX]                  ; divding delta y in delta x
+    fdiv
+    fpatan                                  ; arctan (deltaY / deltaX)
     fstp    dword [Gamma]
-    cc:
     ; ------------- Check first condition ---------------------
     CheckFirstCondition:
     fld     dword [droneAlpha]
@@ -177,8 +179,4 @@ mayDestroy:
     mov     dword ecx, [cond2]
     mul     ecx
     mov     dword [canDestroy], eax
-    cmp     dword [canDestroy], 1
-    jne     ReturnToDrone
-    call    createTarget
-    ReturnToDrone:
     ret

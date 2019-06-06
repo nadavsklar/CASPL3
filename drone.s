@@ -5,6 +5,7 @@
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
 ;             31.5.2019 - Fixing runDrone stack options before and at the end.
+;             5.6.2019 - Target Co routine
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -21,6 +22,7 @@ format_win: db "Drone id %d: I am a winner", 10, 0
 ; -----------------------------------------------------
 section .data           ; we define (global) initialized variables in .data section
     extern SchedulerCo
+    extern TargetCo
     extern DroneIndex
     extern randomNum
     extern playersArray
@@ -188,19 +190,26 @@ runDrone:
     call    mayDestroy
     cmp     dword [canDestroy], 0
     je      DontDestroy
-    Destory:
-    call    destoryTarget
+    TryingToDestroy:
     mov     dword ebx, [tempDrone]
     inc     dword [ebx + 12]
     mov     dword ecx, [ebx + 12]
     cmp     dword ecx, [numberOfNeededTargets]
-    jne     DontDestroy
+    jne     Destroy
     push    dword [DroneIndex]
     push    format_win
     call    printf
     add     esp, 8
     call    endCo
-    ; --------------------------- Return ---------------------
+    ; --------------------------- Return to target co routine ---------------
+    Destroy:
+    popad
+    mov     esp, ebp
+    pop     ebp
+    mov     dword ebx, TargetCo
+    call    Resume
+    jmp     runDrone
+    ; --------------------------- Return to scheduler co routine ------------
     DontDestroy:
     popad
     mov     esp, ebp
