@@ -12,8 +12,8 @@ section	.rodata			; we define (global) read-only variables in .rodata section
     extern format_int
     extern format_string
     extern Const16
-    format_position: db "%.6f,%.6f", 10, 0
-    format_player: db "%d,%.6f,%.6f,%.6f,%d", 10, 0    
+    format_position: db "%.2f,%.2f", 10, 0
+    format_player: db "%d,%.2f,%.2f,%.2f,%d", 10, 0    
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
@@ -48,12 +48,6 @@ runPrinter:
     push    ebp
     mov     ebp, esp
     pushad
-    ; ----- Just print ---------------------------
-    ; mov     eax, 232323                     ; Try to print.
-    ; push    eax
-    ; push    format_int
-    ; call    printf
-    ; add     esp, 8
     ; -------------- Printing Location ---------------
     mov     dword ebx, [targetPosition]         ; ebx = targetPosition
 	fld 	dword [ebx + 4]                     ; Pushing targetPosition.Y

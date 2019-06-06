@@ -389,7 +389,6 @@ initPlayers:
         mov     dword ebx, [alpha]
         mov     dword [ecx + 8], ebx
         mov     dword [ecx + 12], 0
-        debug2:
         ; ----------- next player -------------
         inc     dword [playerIndex]
         jmp     playersLoop
@@ -452,14 +451,11 @@ calculateRandomNumber:
     and     eax, 1
     cmp     eax, 0
     je      dontAddToRandomNum
-
     mov     eax, 15
     sub     eax, edi
     mov     ebx, 0
     mov     dword ebx, [Power_2 + eax * 4]
-    aa:
     add     dword [randomNum], ebx
-
     dontAddToRandomNum:
     shr     edx, 1
     cmp     ecx, 1

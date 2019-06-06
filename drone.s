@@ -64,15 +64,6 @@ runDrone:
     push    ebp
     mov     ebp, esp
     pushad
-    ; ----- Just print ---------------------------
-    push    dword message
-    push    format_string_noline
-    call    printf
-    add     esp, 8
-    push    dword [DroneIndex]
-    push    format_int
-    call    printf
-    add     esp, 8
     ; ------------------- Calculating Random alpha ---------------------
     call    calculateRandomNumber
     fild    dword [randomNum]               ; push random number as float
@@ -118,11 +109,9 @@ runDrone:
     jmp     NotAddingAlpha
     NotSubbingAlpha:
     mov     dword [randomNum], 0
-    aaaa:
     fild    dword [randomNum]
     fcomip    
     jb      NotAddingAlpha
-    bbbb:
     fldpi
     mov     dword [randomNum], 2
     fimul   dword [randomNum]
@@ -217,10 +206,3 @@ runDrone:
     mov     dword ebx, SchedulerCo
     call    Resume
     jmp     runDrone 
-; -----------------------------------------------------
-; Name: calculateNewPosition
-; Purpose: Function that calculate the drone movement 
-; in every new step.
-; -----------------------------------------------------
-calculateNewPosition:
-    ret
