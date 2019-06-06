@@ -18,6 +18,7 @@ section	.rodata			                ; we define (global) read-only variables in .r
     global Const16
     global format_int
     global format_string
+    Power_2: dd 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
     StackSizeDrone: dd 16384
     taps: dd 11, 13, 14, 16             ; Unique taps for LFSR
     format_int: db "%d", 10, 0          ; format int printf
@@ -399,10 +400,16 @@ initPlayers:
 ; Purpose: LFSR main function, calculate a random number.
 ; -----------------------------------------------------
 calculateRandomNumber:
-    ; ---- first getting taps position bits -------
-    mov     dword eax, [LFSR] 
+    pushad
+    mov     edi, 0
     mov     dword [randomNum], 0
-    mov     dword [randomNum], eax           
+    startRandomLoop:
+    cmp     edi, 16
+    je      endCalculate
+    ; ---- first getting taps position bits -------
+    ; mov     dword eax, [LFSR] 
+    ; mov     dword [randomNum], 0
+    ; mov     dword [randomNum], eax           
     ; -------- 16 ------------
     mov     dword ecx, 0
     mov     dword ecx, [LFSR]   
@@ -437,9 +444,23 @@ calculateRandomNumber:
     xor     ecx, edx                ; ecx = ecx XOR edx. 16bit Xor 14bit
     mov     dword edx, [LFSR13bit]
     xor     ecx, edx                ; ecx = ecx Xor edx. (16 xor 14) xor 13
-    mov     dword edx, [LFSR11bit]  ; ecx = ecx Xor edx. ((16 xor 14) xor 13) xor 11
+    mov     dword edx, [LFSR11bit]  ; ecx = ecx Xor edx. ((16 xor 14) xor 13) xor 11wor
     xor     ecx, edx
     mov     dword edx, [LFSR]
+
+    mov     dword eax, [LFSR]       ; eax contains LSB 
+    and     eax, 1
+    cmp     eax, 0
+    je      dontAddToRandomNum
+
+    mov     eax, 15
+    sub     eax, edi
+    mov     ebx, 0
+    mov     dword ebx, [Power_2 + eax * 4]
+    aa:
+    add     dword [randomNum], ebx
+
+    dontAddToRandomNum:
     shr     edx, 1
     cmp     ecx, 1
     jne     returnRandomNumber
@@ -447,8 +468,12 @@ calculateRandomNumber:
         add     edx, 32768
     returnRandomNumber:
         mov     dword [LFSR], edx
+        inc     edi
+        jmp     startRandomLoop
     ; ------------ Return number in randomNum ---------------
-    ret
+    endCalculate:
+        popad
+        ret
 ; -----------------------------------------------------
 ; Name: startCo
 ; Purpose: We start scheduling by suspending main() and resuming a scheduler co-routine.
