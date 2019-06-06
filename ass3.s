@@ -327,7 +327,6 @@ initBoard:
     mov     dword [ebx + 0], ecx
     mov     dword ecx, [Y2]
     mov     dword [ebx + 4], ecx
-    debug:
     ret
 ; -----------------------------------------------------
 ; Name: initPlayers
@@ -446,15 +445,10 @@ calculateRandomNumber:
     mov     dword edx, [LFSR11bit]  ; ecx = ecx Xor edx. ((16 xor 14) xor 13) xor 11wor
     xor     ecx, edx
     mov     dword edx, [LFSR]
-
-    mov     dword eax, [LFSR]       ; eax contains LSB 
-    and     eax, 1
-    cmp     eax, 0
+    cmp     ecx, 0
     je      dontAddToRandomNum
-    mov     eax, 15
-    sub     eax, edi
     mov     ebx, 0
-    mov     dword ebx, [Power_2 + eax * 4]
+    mov     dword ebx, [Power_2 + edi * 4]
     add     dword [randomNum], ebx
     dontAddToRandomNum:
     shr     edx, 1
