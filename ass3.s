@@ -17,6 +17,7 @@ section	.rodata			                ; we define (global) read-only variables in .r
     global FunctionOffset
     global Const8
     global Const16
+    global Const180
     global format_int
     global format_string
     Power_2: dd 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
@@ -114,7 +115,6 @@ section .text
 ; Purpose: main function, called from start. 
 ; Init the program details using argv arguments and the other
 ; functions below.
-; //TODO: Enter every arg into its var. Using sscanf
 ; -----------------------------------------------------
 main:
     mov     ecx, [esp + 4] ; argc
@@ -407,10 +407,7 @@ calculateRandomNumber:
     startRandomLoop:
     cmp     edi, 16
     je      endCalculate
-    ; ---- first getting taps position bits -------
-    ; mov     dword eax, [LFSR] 
-    ; mov     dword [randomNum], 0
-    ; mov     dword [randomNum], eax           
+    ; ---- first getting taps position bits -------       
     ; -------- 16 ------------
     mov     dword ecx, 0
     mov     dword ecx, [LFSR]   
@@ -439,7 +436,6 @@ calculateRandomNumber:
     mov     dword [LFSR11bit], 0
     mov     dword [LFSR11bit], ecx
     ; -------- Xor -----------
-
     mov     dword ecx, [LFSR16bit]
     mov     dword edx, [LFSR14bit]
     xor     ecx, edx                ; ecx = ecx XOR edx. 16bit Xor 14bit

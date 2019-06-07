@@ -4,6 +4,7 @@
 ; Change Log: 21.5.2019 - Adding some documentation.
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
+;             7.6.2019 - Changing printing to degrees.
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -12,6 +13,7 @@ section	.rodata			; we define (global) read-only variables in .rodata section
     extern format_int
     extern format_string
     extern Const16
+    extern Const180
     format_position: db "%.2f,%.2f", 10, 0
     format_player: db "%d,%.2f,%.2f,%.2f,%d", 10, 0    
 ; -----------------------------------------------------
@@ -70,6 +72,11 @@ runPrinter:
     add     ebx, eax                            ; ebx = playersArray[edi]
     push    dword [ebx + 12]                    ; Pushing playersArray[edi].numOfTargets
     fld     dword [ebx + 8]                     ; Pushing playersArray[edi].Alpha
+    ; ------------- Printing alpha in degrees ---------
+    fild    dword [Const180]            
+    fmul       
+    fldpi                                     
+    fdiv                                        ; alpha * 180 / pi
     sub     esp, 8
     fstp    qword [esp]
     fld     dword [ebx + 4]                     ; Pushing playersArray[edi].Y

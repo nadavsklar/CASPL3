@@ -5,13 +5,14 @@
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
 ;             5.6.2019 - Target Co routine
-;             7.6.2019 - Fixing patan
+;             7.6.2019 - Fixing patan, Adding CheckTerms func.
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
 ; -----------------------------------------------------
 section	.rodata			; we define (global) read-only variables in .rodata section
     extern Const16
+    extern Const180
 ; -----------------------------------------------------
 ; Global initialized vars.
 ; -----------------------------------------------------
@@ -152,6 +153,8 @@ mayDestroy:
     fstp    dword [Gamma]
     ; ------------- Check first condition ---------------------
     CheckFirstCondition:
+    ; ------------- first check if diffrence is bigger than 180 -------
+    call checkDifferenceTerms
     fld     dword [droneAlpha]
     fld     dword [Gamma]
     fsub                                    ; (alpha - gamma)
@@ -189,4 +192,59 @@ mayDestroy:
     mov     dword ecx, [cond2]
     mul     ecx
     mov     dword [canDestroy], eax
+    ret
+; -----------------------------------------------------
+; Name: checkDifferenceTerms
+; Purpose: if the difference in angles is greater than pi, we need to add 
+; 2*pi to the smaller angle before doing the subtraction.
+; This calculation would work as long as beta < pi/2, which we may assume.
+; -----------------------------------------------------
+checkDifferenceTerms:
+    ; ---------------- moving alpha to degrees --------
+    fld     dword [droneAlpha]
+    fild    dword [Const180]
+    fmul
+    fldpi
+    fdiv
+    ; ---------------- moving gamma to degrees --------
+    fld     dword [Gamma]
+    fild    dword [Const180]
+    fmul
+    fldpi
+    fdiv
+    ; ---------------- Checking difference ------------
+    fsub                                     ; alpha - gamma
+    fabs                                     ; | (alpha - gamma) |
+    fild    dword [Const180]
+    fcomip
+    ja      notAddingPi
+    fstp    dword [garbage]
+    ; ---------------- checking whos bigger -----------
+    fld     dword [droneAlpha]
+    fld     dword [Gamma]
+    fcomi                                       ; cmp alpha, gamma
+    ja      alphaIsBigger
+    gammaIsBigger:
+        fstp    dword [garbage]                 ; moving out gamma
+        fstp    dword [garbage]                 ; its in degrees
+        fld     dword [droneAlpha]
+        fldpi
+        mov     dword [garbage], 2
+        fimul   dword [garbage]
+        fadd
+        fstp    dword [droneAlpha]              ; alpha = alpha + pi
+        jmp endCheckTerms
+    alphaIsBigger:
+        fstp    dword [garbage]
+        fstp    dword [garbage]
+        fld     dword [Gamma]
+        fldpi
+        mov     dword [garbage], 2
+        fimul   dword [garbage]
+        fadd
+        fstp    dword [Gamma]
+        jmp endCheckTerms
+    notAddingPi:
+    fstp    dword [garbage]
+    endCheckTerms:
     ret
