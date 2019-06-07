@@ -64,6 +64,7 @@ section .data                           ; we define (global) initialized variabl
     global TargetCo
     global randomNum
     extern currentSteps
+    drone1OldStack: dd 0
     playerIndex: dd 0
     X: dd 0.0
     X2: dd 0.0
@@ -107,6 +108,7 @@ section .text
     extern runScheduler
     extern do_Resume
     extern Resume
+    extern free
     global startCo
     global endCo
     global calculateRandomNumber
@@ -241,6 +243,8 @@ initCoRoutines:
         call    malloc
         add     esp, 4
         add     dword ebx, StackOffset
+        mov     dword ecx, [ebx]
+        mov     dword [drone1OldStack], ecx
         mov     dword [ebx], eax                        ; DronesArrayPointer[i].stack = malloc(StackSize)
         sub     ebx, 4
         mov     dword eax, [ebx + FunctionOffset]       ; eax = DronesArrayPointer[i].func
@@ -475,13 +479,26 @@ startCo:
 
 ; -----------------------------------------------------
 ; Name: endCo
-; Purpose: We end scheduling and go back to main().
+; Purpose: We end scheduling and go back to main(), not before
+; freeing memory.
 ; -----------------------------------------------------
 endCo:
     mov     dword esp, [MainSP]
     popad
+    push    dword [drone1OldStack]
+    call    free
+    add     esp, 4
+    push    dword [playersArray]
+    call    free
+    add     esp, 4
+    call    CleanDronesArrayPointer
+    push    dword [DronesArrayPointer]
+    call    free
+    add     esp, 4
+    push    dword [targetPosition]
+    call    free
+    add     esp, 4
     ret
-
 ; -----------------------------------------------------
 ; Name: NormalBeta
 ; Purpose: Converting beta angle from degrees into radians
@@ -493,4 +510,25 @@ NoramlBeta:
     fild    dword [Const180]
     fdiv
     fstp    dword [beta]        ;beta(radians) = beta(degrees) × π / 180°
+    ret
+; -----------------------------------------------------
+; Name: CleanDronesArrayPointer
+; Purpose: Free drones memory
+; -----------------------------------------------------
+CleanDronesArrayPointer:
+    mov     edi, 0
+    StartClean:
+        cmp     dword edi, [numOfDrones]                ; Checking if every drone is freed
+        je      EndClean            
+        mov     eax, edi                                ; Doing some stupid stuff for mul 8
+        mov     dword edx, [Const8]             
+        mul     edx
+        mov     dword ebx, [DronesArrayPointer]
+        add     ebx, eax                                ; ebx = DronesArrayPointer[edi]
+        push    dword [ebx + StackOffset]
+        call    free
+        add     esp, 4
+        inc     edi
+        jmp     StartClean
+    EndClean:
     ret
