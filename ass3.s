@@ -7,6 +7,7 @@
 ;             31.5.2019 - Communication working until Printer
 ;             3.6.2019 - Comminication working with drones > 3
 ;             5.6.2019 - Target Co routine
+;             7.6.2019 - Adding BetaNormal function
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -485,11 +486,15 @@ endCo:
     popad
     ret
 
+; -----------------------------------------------------
+; Name: NormalBeta
+; Purpose: Converting beta angle from degrees into radians
+; -----------------------------------------------------
 NoramlBeta:
     fild    dword [beta]
     fldpi
     fmul
     fild    dword [Const180]
     fdiv
-    fstp    dword [beta]
+    fstp    dword [beta]        ;beta(radians) = beta(degrees) × π / 180°
     ret

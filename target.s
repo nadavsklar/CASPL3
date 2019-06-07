@@ -5,6 +5,7 @@
 ;             26.5.2019 - Compiling and adding makefile. Starting real functions and 
 ;                           Co routines stuff. 
 ;             5.6.2019 - Target Co routine
+;             7.6.2019 - Fixing patan
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
@@ -153,10 +154,10 @@ mayDestroy:
     CheckFirstCondition:
     fld     dword [droneAlpha]
     fld     dword [Gamma]
-    fsub
-    fabs
-    fld     dword [beta]
-    fcomip   
+    fsub                                    ; (alpha - gamma)
+    fabs                                    ; |(alpha - gamma)|
+    fld     dword [beta]                  
+    fcomip                                  ; (abs(alpha-gamma) < beta)   
     ja      Cond1IsTrue
     Cond1IsFalse:
     mov     dword [cond1], 0
@@ -168,14 +169,14 @@ mayDestroy:
     fstp    dword [garbage]
     fld     dword [deltaX]
     fld     dword [deltaX]
-    fmul
+    fmul                                    ; (x2-x1)^2
     fld     dword [deltaY]
     fld     dword [deltaY]
-    fmul
-    fadd
-    fsqrt
+    fmul                                    ; (y2-y1)^2
+    fadd                                    ; (y2-y1)^2+(x2-x1)^2
+    fsqrt                                   ; sqrt((y2-y1)^2+(x2-x1)^2)
     fild    dword [maxDistance]
-    fcomip
+    fcomip                                  ; sqrt((y2-y1)^2+(x2-x1)^2) < d
     ja      Cond2IsTrue
     Cond2IsFalse:
     mov     dword [cond2], 0
