@@ -7,7 +7,7 @@
 ;             31.5.2019 - Communication working until Printer
 ;             3.6.2019 - Comminication working with drones > 3
 ;             5.6.2019 - Target Co routine
-;             7.6.2019 - Adding BetaNormal function
+;             7.6.2019 - Adding BetaNormal function, cleaning memory leaks
 ; -----------------------------------------------------
 ; -----------------------------------------------------
 ; Global read only vars
