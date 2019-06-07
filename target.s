@@ -60,7 +60,7 @@ runTarget:
     push    ebp
     mov     ebp, esp
     pushad
-    call createTarget
+    call    createTarget
     ; ------ Return ----------------------
     popad
     mov     esp, ebp
@@ -133,12 +133,21 @@ mayDestroy:
     fsub
     fstp    dword [deltaY]                  ; deltaY = targetY - droneY
     ; ------------- Calculating Gamma ------------------
-    mov     dword [garbage], 1
-    fild    dword [garbage]
     fld     dword [deltaY]
     fld     dword [deltaX]                  ; divding delta y in delta x
     fdiv
+    mov     dword [garbage], 1
+    fild    dword [garbage]
     fpatan                                  ; arctan (deltaY / deltaX)
+    mov     dword [garbage], 0
+    fild    dword [garbage]
+    fcomip
+    jb      PopToGamma
+    fldpi
+    mov     dword [garbage], 2
+    fimul   dword [garbage]
+    fadd
+    PopToGamma:
     fstp    dword [Gamma]
     ; ------------- Check first condition ---------------------
     CheckFirstCondition:
@@ -146,7 +155,7 @@ mayDestroy:
     fld     dword [Gamma]
     fsub
     fabs
-    fild    dword [beta]
+    fld     dword [beta]
     fcomip   
     ja      Cond1IsTrue
     Cond1IsFalse:

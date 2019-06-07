@@ -27,6 +27,7 @@ section	.rodata			                ; we define (global) read-only variables in .r
     StackOffset equ 4                   ; offset of pointer to co-routine stack in co-routine struct
     Const8: dd 8
     Const16: dd 16
+    Const180: dd 180
 ; -----------------------------------------------------
 ; Global uninitialized vars, such as buffers, structures
 ; and more.
@@ -173,6 +174,7 @@ main:
     add     esp, 12
     popad
     
+    call    NoramlBeta
     call    initCoRoutines
     call    initBoard
     call    initPlayers
@@ -481,4 +483,13 @@ startCo:
 endCo:
     mov     dword esp, [MainSP]
     popad
+    ret
+
+NoramlBeta:
+    fild    dword [beta]
+    fldpi
+    fmul
+    fild    dword [Const180]
+    fdiv
+    fstp    dword [beta]
     ret

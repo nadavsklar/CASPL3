@@ -160,7 +160,7 @@ runDrone:
     fcomip   
     ja      NotSubbingY
     mov     dword [randomNum], 100
-    fild     dword [randomNum]
+    fild    dword [randomNum]
     fsub
     fabs
     jmp     NotAddingY
