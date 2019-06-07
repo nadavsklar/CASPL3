@@ -485,19 +485,19 @@ startCo:
 endCo:
     mov     dword esp, [MainSP]
     popad
-    push    dword [drone1OldStack]
-    call    free
-    add     esp, 4
-    push    dword [playersArray]
-    call    free
-    add     esp, 4
-    call    CleanDronesArrayPointer
-    push    dword [DronesArrayPointer]
-    call    free
-    add     esp, 4
-    push    dword [targetPosition]
-    call    free
-    add     esp, 4
+    ; push    dword [drone1OldStack]
+    ; call    free
+    ; add     esp, 4
+    ; push    dword [playersArray]
+    ; call    free
+    ; add     esp, 4
+    ; call    CleanDronesArrayPointer
+    ; push    dword [DronesArrayPointer]
+    ; call    free
+    ; add     esp, 4
+    ; push    dword [targetPosition]
+    ; call    free
+    ; add     esp, 4
     ret
 ; -----------------------------------------------------
 ; Name: NormalBeta
